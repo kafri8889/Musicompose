@@ -3,6 +3,7 @@ package com.anafthdev.musicompose.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +25,7 @@ import com.anafthdev.musicompose.ui.scan_music.ScanMusicScreen
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModelFactory
 import com.anafthdev.musicompose.ui.theme.MusicomposeTheme
+import com.anafthdev.musicompose.utils.AppUtils.toast
 import com.anafthdev.musicompose.utils.DatabaseUtil
 import com.anafthdev.musicompose.utils.MusicManager
 import timber.log.Timber
@@ -43,7 +45,8 @@ class MainActivity : ComponentActivity() {
 		if (granted) {
 
 		} else {
-
+			"You must grant permission!".toast(this, Toast.LENGTH_LONG)
+			finishAffinity()
 		}
 	}
 	
