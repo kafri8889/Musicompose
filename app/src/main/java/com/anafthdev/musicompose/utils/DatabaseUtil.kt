@@ -54,4 +54,18 @@ class DatabaseUtil(context: Context) {
         }.invokeOnCompletion { postAction(action) }
     }
 
+    companion object {
+        private var INSTANCE: DatabaseUtil? = null
+
+        fun getInstance(base: Context): DatabaseUtil {
+            if (INSTANCE == null) {
+                synchronized(DatabaseUtil::class) {
+                    INSTANCE = DatabaseUtil(base)
+                }
+            }
+
+            return INSTANCE!!
+        }
+    }
+
 }

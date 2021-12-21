@@ -1,5 +1,7 @@
 package com.anafthdev.musicompose.ui.home
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,13 +30,22 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
+import com.anafthdev.musicompose.data.AppDatastore
 import com.anafthdev.musicompose.data.MusicomposeDestination
+import com.anafthdev.musicompose.ui.MainActivity
 import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.PopupMenu
 import com.anafthdev.musicompose.ui.theme.*
+import com.anafthdev.musicompose.utils.AppUtils
+import com.anafthdev.musicompose.utils.AppUtils.toast
+import com.anafthdev.musicompose.utils.ComposeUtils.LifecycleEventListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(
     ExperimentalAnimationApi::class,
@@ -44,7 +55,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    datastore: AppDatastore
 ) {
 
     val context = LocalContext.current
@@ -55,20 +67,35 @@ fun HomeScreen(
     )
 
     val sortMusicItem = listOf(
-        stringResource(id = R.string.date_added),
-        stringResource(id = R.string.song_name),
-        stringResource(id = R.string.artist_name),
+        stringResource(id = R.string.date_added) to AppUtils.PreferencesValue.SORT_MUSIC_BY_DATE_ADDED,
+        stringResource(id = R.string.song_name) to AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME,
+        stringResource(id = R.string.artist_name) to AppUtils.PreferencesValue.SORT_MUSIC_BY_ARTIST_NAME,
     )
 
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
+    val sortMusicOption by datastore.getSortMusicOption.collectAsState(initial = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME)
     val musicList by homeViewModel.musicList.observeAsState(initial = emptyList())
 
+    var hasNavigate by remember { mutableStateOf(false) }
     var showDropdownMenu by remember { mutableStateOf(false) }
-    var selectedSortOption by remember { mutableStateOf(1) }
 
-    homeViewModel.getAllMusic()
+    if (!hasNavigate) {
+        (context as MainActivity).LifecycleEventListener {
+            if (it == Lifecycle.Event.ON_RESUME) {
+                scope.launch {
+                    datastore.getSortMusicOption.collect { option ->
+                        withContext(Dispatchers.Main) {
+                            homeViewModel.getAllMusic(context, option)
+                        }
+                    }
+                }
+            }
+        }
+        true.also { hasNavigate = it }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -159,17 +186,21 @@ fun HomeScreen(
                             .padding(bottom = 16.dp, top = 16.dp)
                     )
 
-                    sortMusicItem.forEachIndexed { i, s ->
+                    sortMusicItem.forEach { pair ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectedSortOption = i
+                                    scope.launch {
+                                        datastore.setSortMusicOption(pair.second)
+                                        bottomSheetState.hide()
+                                        homeViewModel.getAllMusic(context, pair.second)
+                                    }
                                 }
                         ) {
                             Text(
-                                text = s,
+                                text = pair.first,
                                 style = typographySkModernist().body1.copy(
                                     fontSize = TextUnit(16f, TextUnitType.Sp)
                                 ),
@@ -181,9 +212,13 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.weight(1f))
 
                             RadioButton(
-                                selected = i == selectedSortOption,
+                                selected = pair.second == sortMusicOption,
                                 onClick = {
-                                    selectedSortOption = i
+                                    scope.launch {
+                                        datastore.setSortMusicOption(pair.second)
+                                        bottomSheetState.hide()
+                                        homeViewModel.getAllMusic(context, pair.second)
+                                    }
                                 },
                                 modifier = Modifier
                                     .wrapContentSize(Alignment.CenterEnd)

@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.anafthdev.musicompose.BuildConfig
+import com.anafthdev.musicompose.data.AppDatastore
 import com.anafthdev.musicompose.data.MusicRepository
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.ui.home.HomeScreen
@@ -39,6 +40,7 @@ import timber.log.Timber
 class MainActivity : ComponentActivity() {
 
 	private lateinit var databaseUtil: DatabaseUtil
+	private lateinit var datastore: AppDatastore
 	private lateinit var homeViewModel: HomeViewModel
 	private lateinit var scanMusicViewModel: ScanMusicViewModel
 	
@@ -63,7 +65,8 @@ class MainActivity : ComponentActivity() {
 			permissionResultLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
 		}
 
-		databaseUtil = DatabaseUtil(this)
+		databaseUtil = DatabaseUtil.getInstance(applicationContext)
+		datastore = AppDatastore.getInstance(applicationContext)
 		homeViewModel = ViewModelProvider(this, HomeViewModelFactory(MusicRepository(databaseUtil)))[HomeViewModel::class.java]
 		scanMusicViewModel = ViewModelProvider(this, ScanMusicViewModelFactory(MusicRepository(databaseUtil)))[ScanMusicViewModel::class.java]
 
@@ -88,7 +91,8 @@ class MainActivity : ComponentActivity() {
 			composable(MusicomposeDestination.HomeScreen) {
 				HomeScreen(
 					navController = navigationController,
-					homeViewModel = homeViewModel
+					homeViewModel = homeViewModel,
+					datastore = datastore
 				)
 			}
 
