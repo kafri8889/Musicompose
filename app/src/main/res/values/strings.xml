@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name" translatable="false">Musicompose</string>
+    
+    <string name="scan_local_songs">Scan local songs</string>
+    <string name="sort_by">Sort by</string>
+    <string name="date_added">Date added</string>
+    <string name="song_name">Song name</string>
+    <string name="artist_name">Artist name</string>
+
+</resources>

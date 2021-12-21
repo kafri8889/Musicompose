@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_local_songs">Pindai lagu lokal</string>
+    <string name="sort_by">Sortir menurut</string>
+    <string name="date_added">Tanggal ditambahkan</string>
+    <string name="song_name">Nama lagu</string>
+    <string name="artist_name">Nama artis</string>
+</resources>
