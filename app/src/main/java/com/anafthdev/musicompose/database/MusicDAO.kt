@@ -23,4 +23,5 @@ interface MusicDAO {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMusic(music: Music)
+
 }

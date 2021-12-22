@@ -25,10 +25,12 @@ import com.anafthdev.musicompose.ui.home.HomeViewModelFactory
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicScreen
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModelFactory
+import com.anafthdev.musicompose.ui.search.SearchScreen
+import com.anafthdev.musicompose.ui.search.SearchViewModelFactory
+import com.anafthdev.musicompose.ui.search.SearchViewModel
 import com.anafthdev.musicompose.ui.theme.MusicomposeTheme
 import com.anafthdev.musicompose.utils.AppUtils.toast
 import com.anafthdev.musicompose.utils.DatabaseUtil
-import com.anafthdev.musicompose.utils.MusicManager
 import timber.log.Timber
 
 /**
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
 	private lateinit var datastore: AppDatastore
 	private lateinit var homeViewModel: HomeViewModel
 	private lateinit var scanMusicViewModel: ScanMusicViewModel
+	private lateinit var searchViewModel: SearchViewModel
 	
 	private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
 		if (granted) {
@@ -69,6 +72,7 @@ class MainActivity : ComponentActivity() {
 		datastore = AppDatastore.getInstance(applicationContext)
 		homeViewModel = ViewModelProvider(this, HomeViewModelFactory(MusicRepository(databaseUtil)))[HomeViewModel::class.java]
 		scanMusicViewModel = ViewModelProvider(this, ScanMusicViewModelFactory(MusicRepository(databaseUtil)))[ScanMusicViewModel::class.java]
+		searchViewModel = ViewModelProvider(this, SearchViewModelFactory(MusicRepository(databaseUtil)))[SearchViewModel::class.java]
 
 		setContent {
 			MusicomposeTheme {
@@ -100,6 +104,13 @@ class MainActivity : ComponentActivity() {
 				ScanMusicScreen(
 					navController = navigationController,
 					scanMusicViewModel = scanMusicViewModel
+				)
+			}
+
+			composable(MusicomposeDestination.SearchScreen) {
+				SearchScreen(
+					navController = navigationController,
+					searchViewModel = searchViewModel
 				)
 			}
 

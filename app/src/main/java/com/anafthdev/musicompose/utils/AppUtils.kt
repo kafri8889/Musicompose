@@ -16,6 +16,16 @@ object AppUtils {
         const val SORT_MUSIC_BY_DATE_ADDED = "sort_music_by_date_added"
     }
 
+    /**
+     * Returns a list element from given collection
+     * @author kafri8889
+     */
+    fun <T, U> Collection<T>.getBy(selector: (T) -> U): List<U> {
+        val result = ArrayList<U>()
+        for (v in this) { result.add(selector(v)) }
+        return result
+    }
+
     fun Any.toast(context: Context, length: Int = Toast.LENGTH_SHORT) =
         Toast.makeText(context, this.toString(), length).show()
 }

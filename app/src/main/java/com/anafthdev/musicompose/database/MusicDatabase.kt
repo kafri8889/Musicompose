@@ -7,7 +7,9 @@ import androidx.room.RoomDatabase
 import com.anafthdev.musicompose.model.Music
 
 @Database(
-    entities = [Music::class],
+    entities = [
+        Music::class,
+    ],
     version = 1,
     exportSchema = false
 )

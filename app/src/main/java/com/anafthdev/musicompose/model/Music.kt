@@ -12,6 +12,7 @@ data class Music(
 	@ColumnInfo(name = "title") val title: String,
 	@ColumnInfo(name = "artist") val artist: String,
 	@ColumnInfo(name = "album") val album: String,
+	@ColumnInfo(name = "albumID") val albumID: String,
 	@ColumnInfo(name = "duration") val duration: Long,
 	@ColumnInfo(name = "albumPath") val albumPath: String?,
 	@ColumnInfo(name = "path") val path: String,

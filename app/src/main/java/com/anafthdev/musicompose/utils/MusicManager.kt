@@ -1,7 +1,6 @@
 package com.anafthdev.musicompose.utils
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import com.anafthdev.musicompose.model.Music
@@ -13,33 +12,37 @@ object MusicManager {
 		var count = 0
 
 		val audioUriExternal = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-		val projection = listOf(MediaStore.Audio.Media._ID)
+		val musicProjection = listOf(MediaStore.Audio.Media._ID)
 
-		val cursor = context.contentResolver.query(
+		val musicCursor = context.contentResolver.query(
 			audioUriExternal,
-			projection.toTypedArray(),
+			musicProjection.toTypedArray(),
 			null,
 			null,
 			null
 		)
 
-		if (cursor != null) {
-			while (cursor.moveToNext()) {
+		if (musicCursor != null) {
+			while (musicCursor.moveToNext()) {
 				count += 1
 			}
 
-			cursor.close()
+			musicCursor.close()
 		}
 
 		return count
 	}
 	
-	fun getMusic(context: Context, scannedMusicCount: (Int) -> Unit): ArrayList<Music> {
+	fun getMusic(
+		context: Context,
+		scannedMusicCount: (Int) -> Unit,
+	): ArrayList<Music> {
 		val audioList = ArrayList<Music>()
 		var scannedMusic = 0
 		
 		val audioUriExternal = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-		val projection = listOf(
+
+		val musicProjection = listOf(
 			MediaStore.Audio.Media._ID,
 			MediaStore.Audio.Media.DISPLAY_NAME,
 			MediaStore.Audio.Media.TITLE,
@@ -49,43 +52,43 @@ object MusicManager {
 			MediaStore.Audio.Media.ALBUM_ID,
 			MediaStore.Audio.Media.DATE_ADDED,
 		)
-		
-		val cursorIndexID: Int
-		val cursorIndexDisplayName: Int
-		val cursorIndexTitle: Int
-		val cursorIndexArtist: Int
-		val cursorIndexAlbum: Int
-		val cursorIndexDuration: Int
-		val cursorIndexAlbumID: Int
-		val cursorIndexDateAdded: Int
 
-		val cursor = context.contentResolver.query(
+		val cursorIndexMusicID: Int
+		val cursorIndexMusicDisplayName: Int
+		val cursorIndexMusicTitle: Int
+		val cursorIndexMusicArtist: Int
+		val cursorIndexMusicAlbum: Int
+		val cursorIndexMusicDuration: Int
+		val cursorIndexMusicAlbumID: Int
+		val cursorIndexMusicDateAdded: Int
+
+		val musicCursor = context.contentResolver.query(
 			audioUriExternal,
-			projection.toTypedArray(),
+			musicProjection.toTypedArray(),
 			null,
 			null,
 			null
 		)
-		
-		if (cursor != null) {
-			cursorIndexID = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-			cursorIndexDisplayName = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
-			cursorIndexTitle = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-			cursorIndexArtist = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-			cursorIndexAlbum = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-			cursorIndexDuration = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-			cursorIndexAlbumID = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
-			cursorIndexDateAdded = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
 
-			while (cursor.moveToNext()) {
-				val audioID = cursor.getLong(cursorIndexID)
-				val displayName = cursor.getString(cursorIndexDisplayName)
-				val title = cursor.getString(cursorIndexTitle)
-				val artist = cursor.getString(cursorIndexArtist)
-				val album = cursor.getString(cursorIndexAlbum)
-				val duration = cursor.getLong(cursorIndexDuration)
-				val albumId = cursor.getString(cursorIndexAlbumID)
-				val dateAdded = cursor.getLong(cursorIndexDateAdded)
+		if (musicCursor != null) {
+			cursorIndexMusicID = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+			cursorIndexMusicDisplayName = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+			cursorIndexMusicTitle = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+			cursorIndexMusicArtist = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+			cursorIndexMusicAlbum = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+			cursorIndexMusicDuration = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+			cursorIndexMusicAlbumID = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+			cursorIndexMusicDateAdded = musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+
+			while (musicCursor.moveToNext()) {
+				val audioID = musicCursor.getLong(cursorIndexMusicID)
+				val displayName = musicCursor.getString(cursorIndexMusicDisplayName)
+				val title = musicCursor.getString(cursorIndexMusicTitle)
+				val artist = musicCursor.getString(cursorIndexMusicArtist)
+				val album = musicCursor.getString(cursorIndexMusicAlbum)
+				val duration = musicCursor.getLong(cursorIndexMusicDuration)
+				val albumId = musicCursor.getString(cursorIndexMusicAlbumID)
+				val dateAdded = musicCursor.getLong(cursorIndexMusicDateAdded)
 
 				val albumPath = Uri.withAppendedPath(Uri.parse("content://media/external/audio/albumart"), albumId)
 				val path = Uri.withAppendedPath(audioUriExternal, "" + audioID)
@@ -97,6 +100,7 @@ object MusicManager {
 						title = title,
 						artist = artist,
 						album = album,
+						albumID = albumId,
 						duration = duration,
 						albumPath = albumPath.toString(),
 						path = path.toString(),
@@ -108,19 +112,10 @@ object MusicManager {
 				scannedMusicCount(scannedMusic)
 			}
 
-			cursor.close()
+			musicCursor.close()
 		}
 		
 		Timber.i("Audio List: $audioList")
 		return audioList
-	}
-
-	private fun getMusicThumbnailByteArray(context: Context, uri: Uri): ByteArray? {
-		val mmr = MediaMetadataRetriever().apply { setDataSource(context, uri) }
-
-		val byteArray = mmr.embeddedPicture
-		mmr.release()
-
-		return byteArray
 	}
 }

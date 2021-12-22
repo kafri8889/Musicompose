@@ -15,4 +15,5 @@ class FakeMusicRepository: MusicRepositoryImpl {
     override fun insertMusic(musicList: List<Music>, action: () -> Unit) {}
 
     override fun insertMusic(music: Music, action: () -> Unit) {}
+
 }

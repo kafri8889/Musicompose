@@ -28,4 +28,5 @@ class MusicRepository(private val databaseUtil: DatabaseUtil): MusicRepositoryIm
     override fun insertMusic(music: Music, action: () -> Unit) {
         databaseUtil.insertMusic(music, action)
     }
+
 }

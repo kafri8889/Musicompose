@@ -1,10 +1,9 @@
 package com.anafthdev.musicompose.ui.home
 
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,18 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
@@ -40,7 +34,6 @@ import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.PopupMenu
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils
-import com.anafthdev.musicompose.utils.AppUtils.toast
 import com.anafthdev.musicompose.utils.ComposeUtils.LifecycleEventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -48,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(
+    ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class,
     ExperimentalMaterialApi::class,
     ExperimentalUnitApi::class
@@ -110,7 +104,14 @@ fun HomeScreen(
                 ) {
                     IconButton(
                         onClick = {
+                            navController.navigate(MusicomposeDestination.SearchScreen) {
+                                popUpTo(MusicomposeDestination.HomeScreen) {
+                                    saveState = false
+                                }
 
+                                restoreState = false
+                                launchSingleTop = true
+                            }
                         },
                     ) {
                         Icon(
@@ -159,7 +160,6 @@ fun HomeScreen(
                             }
                         )
                     }
-
                 }
             }
         }
@@ -229,12 +229,16 @@ fun HomeScreen(
                 }
             }
         ) {
-            LazyColumn {
-                items(musicList) { music ->
-                    MusicItem(
-                        music = music,
-                        onClick = {}
-                    )
+            CompositionLocalProvider(
+                LocalOverScrollConfiguration provides null
+            ) {
+                LazyColumn {
+                    items(musicList) { music ->
+                        MusicItem(
+                            music = music,
+                            onClick = {}
+                        )
+                    }
                 }
             }
         }

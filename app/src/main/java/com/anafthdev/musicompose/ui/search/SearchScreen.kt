@@ -1,0 +1,357 @@
+package com.anafthdev.musicompose.ui.search
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.anafthdev.musicompose.R
+import com.anafthdev.musicompose.data.FakeMusicRepository
+import com.anafthdev.musicompose.data.MusicomposeDestination
+import com.anafthdev.musicompose.ui.components.AlbumItem
+import com.anafthdev.musicompose.ui.components.MusicItem
+import com.anafthdev.musicompose.ui.components.TransparentButton
+import com.anafthdev.musicompose.ui.theme.*
+
+@OptIn(
+    ExperimentalUnitApi::class,
+    ExperimentalComposeUiApi::class,
+    ExperimentalFoundationApi::class
+)
+@Composable
+fun SearchScreen(
+    navController: NavHostController,
+    searchViewModel: SearchViewModel
+) {
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    val musicList by searchViewModel.musicList.observeAsState(initial = emptyList())
+    val filteredMusic by searchViewModel.filteredMusic.observeAsState(initial = emptyList())
+    val filteredArtist by searchViewModel.filteredArtist.observeAsState(initial = emptyList())
+    val filteredAlbum by searchViewModel.filteredAlbum.observeAsState(initial = emptyList())
+
+    var query by remember { mutableStateOf("") }
+    var hasNavigate by remember { mutableStateOf(false) }
+    val searchTextFieldFocusRequester = remember { FocusRequester() }
+
+    val albumList = filteredAlbum.groupBy { it.album }
+
+    if (!hasNavigate) {
+        LaunchedEffect(Unit) {
+            searchTextFieldFocusRequester.requestFocus()
+        }
+        true.also { hasNavigate = it }
+    }
+
+    searchViewModel.filter(query)
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                elevation = 0.dp,
+                backgroundColor = if (isSystemInDarkTheme()) background_dark else background_light
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxSize()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        TextField(
+                            value = query,
+                            singleLine = true,
+                            onValueChange = { s ->
+                                query = s
+                            },
+                            trailingIcon = {
+                                if (query.isNotBlank()) {
+                                    IconButton(
+                                        onClick = {
+                                            query = ""
+                                        }
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.x_mark_outlined_filled),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            placeholder = {
+                                Text(
+                                    text = stringResource(id = R.string.search_placeholder),
+                                    style = typographySkModernist().body1.copy(
+                                        color = background_content_dark
+                                    )
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    keyboardController?.hide()
+                                }
+                            ),
+                            colors = TextFieldDefaults.textFieldColors(
+                                backgroundColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .weight(0.5f)
+                                .padding(end = 8.dp)
+                                .focusRequester(searchTextFieldFocusRequester)
+                        )
+
+                        Divider(
+                            color = background_content_dark,
+                            modifier = Modifier
+                                .weight(0.01f, fill = false)
+                                .size(1.dp, 16.dp)
+                        )
+
+                        TransparentButton(
+                            indication = rememberRipple(color = Color.Transparent),
+                            onClick = {
+                                navController.navigate(MusicomposeDestination.HomeScreen) {
+                                    popUpTo(0)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(0.18f)
+                                .padding(start = 8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.cancel),
+                                style = typographySkModernist().body1.copy(
+                                    fontSize = TextUnit(12f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
+
+                    Divider(
+                        color = background_content_dark,
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                }
+            }
+        }
+    ) {
+        CompositionLocalProvider(
+            LocalOverScrollConfiguration provides null
+        ) {
+            LazyColumn {
+
+                item {
+                    if (filteredMusic.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.song),
+                                style = typographyDmSans().body1.copy(
+                                    fontSize = TextUnit(16f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = 14.dp, top = 16.dp, bottom = 8.dp)
+                            )
+
+                            Text(
+                                text = "(${filteredMusic.size})",
+                                style = typographyDmSans().body1.copy(
+                                    color = typographyDmSans().body1.color.copy(alpha = 0.6f),
+                                    fontSize = TextUnit(14f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 14.dp, top = 16.dp, bottom = 16.dp)
+                            )
+                        }
+                    }
+                }
+
+                items(filteredMusic) { music ->
+                    MusicItem(
+                        music = music,
+                        showImage = false,
+                        showDuration = false,
+                        onClick = {
+
+                        },
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                    )
+                }
+
+                item {
+                    if (filteredArtist.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.artist),
+                                style = typographyDmSans().body1.copy(
+                                    fontSize = TextUnit(16f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = 14.dp, top = 16.dp, bottom = 8.dp)
+                            )
+
+                            Text(
+                                text = "(${filteredArtist.size})",
+                                style = typographyDmSans().body1.copy(
+                                    color = typographyDmSans().body1.color.copy(alpha = 0.6f),
+                                    fontSize = TextUnit(14f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 14.dp, top = 16.dp, bottom = 16.dp)
+                            )
+                        }
+                    }
+                }
+
+                items(filteredArtist) { music ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, top = 16.dp, bottom = 16.dp)
+                    ) {
+                        Text(
+                            text = music.artist,
+                            style = typographySkModernist().body1.copy(
+                                fontSize = TextUnit(16f, TextUnitType.Sp),
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                        )
+
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                        )
+
+                        IconButton(
+                            onClick = {
+
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowRight,
+                                tint = background_content_dark,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    if (albumList.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.album),
+                                style = typographyDmSans().body1.copy(
+                                    fontSize = TextUnit(16f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = 14.dp, top = 16.dp, bottom = 8.dp)
+                            )
+
+                            Text(
+                                text = "(${filteredArtist.size})",
+                                style = typographyDmSans().body1.copy(
+                                    color = typographyDmSans().body1.color.copy(alpha = 0.6f),
+                                    fontSize = TextUnit(14f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 14.dp, top = 16.dp, bottom = 16.dp)
+                            )
+                        }
+                    }
+                }
+
+                items(albumList.size - 1) { i ->
+                    AlbumItem(
+                        musicList = albumList[albumList.keys.toList()[i]]!!,
+                        onClick = {
+
+                        }
+                    )
+                }
+
+            }
+        }
+    }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun SearchScreenPreview() {
+    val navController = rememberNavController()
+    val searchViewModel = SearchViewModel(FakeMusicRepository())
+
+    SearchScreen(
+        navController = navController,
+        searchViewModel = searchViewModel
+    )
+}
