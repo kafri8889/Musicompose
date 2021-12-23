@@ -7,8 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
@@ -28,7 +27,7 @@ import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModelFactory
 import com.anafthdev.musicompose.ui.search.SearchScreen
 import com.anafthdev.musicompose.ui.search.SearchViewModelFactory
 import com.anafthdev.musicompose.ui.search.SearchViewModel
-import com.anafthdev.musicompose.ui.theme.MusicomposeTheme
+import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils.toast
 import com.anafthdev.musicompose.utils.DatabaseUtil
 import timber.log.Timber
@@ -43,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
 	private lateinit var databaseUtil: DatabaseUtil
 	private lateinit var datastore: AppDatastore
+	private lateinit var musicControllerViewModel: MusicControllerViewModel
 	private lateinit var homeViewModel: HomeViewModel
 	private lateinit var scanMusicViewModel: ScanMusicViewModel
 	private lateinit var searchViewModel: SearchViewModel
@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
 
 		databaseUtil = DatabaseUtil.getInstance(applicationContext)
 		datastore = AppDatastore.getInstance(applicationContext)
+		musicControllerViewModel = ViewModelProvider(this, MusicControllerViewModelFactory(MusicRepository(databaseUtil)))[MusicControllerViewModel::class.java]
 		homeViewModel = ViewModelProvider(this, HomeViewModelFactory(MusicRepository(databaseUtil)))[HomeViewModel::class.java]
 		scanMusicViewModel = ViewModelProvider(this, ScanMusicViewModelFactory(MusicRepository(databaseUtil)))[ScanMusicViewModel::class.java]
 		searchViewModel = ViewModelProvider(this, SearchViewModelFactory(MusicRepository(databaseUtil)))[SearchViewModel::class.java]
@@ -83,8 +84,10 @@ class MainActivity : ComponentActivity() {
 		}
 	}
 
+	@OptIn(ExperimentalMaterialApi::class)
 	@Composable
 	private fun Screen() {
+
 		val navigationController = rememberNavController()
 
 		NavHost(
@@ -95,6 +98,7 @@ class MainActivity : ComponentActivity() {
 			composable(MusicomposeDestination.HomeScreen) {
 				HomeScreen(
 					navController = navigationController,
+					musicControllerViewModel = musicControllerViewModel,
 					homeViewModel = homeViewModel,
 					datastore = datastore
 				)
@@ -113,7 +117,6 @@ class MainActivity : ComponentActivity() {
 					searchViewModel = searchViewModel
 				)
 			}
-
 		}
 	}
 }

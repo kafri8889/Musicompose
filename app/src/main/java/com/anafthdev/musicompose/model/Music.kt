@@ -19,6 +19,17 @@ data class Music(
 	@ColumnInfo(name = "dateAdded") val dateAdded: Long,
 ) {
 	companion object {
-
+		val unknown = Music(
+			audioID = -1L,
+			displayName = "-",
+			title = "-",
+			artist = "<unknown>",
+			album = "-",
+			albumID = "-",
+			duration = 0L,
+			albumPath = null,
+			path = "-",
+			dateAdded = 0L
+		)
 	}
 }

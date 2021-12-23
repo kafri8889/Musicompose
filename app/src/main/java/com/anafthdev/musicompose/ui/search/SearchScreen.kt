@@ -232,10 +232,18 @@ fun SearchScreen(
 
                 item {
                     if (filteredArtist.isNotEmpty()) {
+
+                        Divider(
+                            color = background_content_dark,
+                            thickness = 1.4.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp)
+                        )
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 48.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.artist),
@@ -299,10 +307,18 @@ fun SearchScreen(
 
                 item {
                     if (albumList.isNotEmpty()) {
+
+                        Divider(
+                            color = background_content_dark,
+                            thickness = 1.4.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp)
+                        )
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 48.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.album),
@@ -316,7 +332,7 @@ fun SearchScreen(
                             )
 
                             Text(
-                                text = "(${filteredArtist.size})",
+                                text = "(${albumList.size})",
                                 style = typographyDmSans().body1.copy(
                                     color = typographyDmSans().body1.color.copy(alpha = 0.6f),
                                     fontSize = TextUnit(14f, TextUnitType.Sp),
@@ -336,6 +352,14 @@ fun SearchScreen(
                         onClick = {
 
                         }
+                    )
+                }
+
+                item {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
                     )
                 }
 

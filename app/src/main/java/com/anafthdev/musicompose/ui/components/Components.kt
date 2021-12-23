@@ -109,7 +109,7 @@ fun MusicItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 8.dp, top = 12.dp, bottom = 12.dp, end = 8.dp)
-                .background(if (isSystemInDarkTheme()) background_dark else background_light,)
+                .background(if (isSystemInDarkTheme()) background_dark else background_light)
         ) {
 
             if (showImage) {
