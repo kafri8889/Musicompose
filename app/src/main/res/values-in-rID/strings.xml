@@ -11,5 +11,7 @@
     <string name="song">Lagu</string>
     <string name="artist">Artis</string>
     <string name="album">Album</string>
+    <string name="unknown">Tak dikenal</string>
+    <string name="playlist">Daftar Putar</string>
 
 </resources>

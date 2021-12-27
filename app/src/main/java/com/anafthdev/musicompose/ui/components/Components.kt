@@ -14,12 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
@@ -81,6 +79,36 @@ fun TransparentButton(
 
 
 
+@Composable
+fun IconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    rippleRadius: Dp = 24.dp,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .minimumTouchTargetSize()
+            .clickable(
+                onClick = onClick,
+                enabled = enabled,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = false, radius = rippleRadius)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
+        CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)
+    }
+}
+
+
+
+
+
 @OptIn(
     ExperimentalMaterialApi::class,
     ExperimentalUnitApi::class
@@ -88,6 +116,7 @@ fun TransparentButton(
 @Composable
 fun MusicItem(
     music: Music,
+    isMusicPlayed: Boolean,
     modifier: Modifier = Modifier,
     showImage: Boolean = true,
     showDuration: Boolean = true,
@@ -115,11 +144,7 @@ fun MusicItem(
             if (showImage) {
                 Image(
                     painter = rememberImagePainter(
-                        data = run {
-                            if (music.albumPath != null) {
-                                music.albumPath.toUri()
-                            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
-                        },
+                        data = music.albumPath.toUri(),
                         builder = {
                             error(R.drawable.ic_music_unknown)
                             placeholder(R.drawable.ic_music_unknown)
@@ -141,6 +166,7 @@ fun MusicItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographyDmSans().body1.copy(
+                        color = if (isMusicPlayed) sunset_orange else typographyDmSans().body1.color,
                         fontSize = TextUnit(14f, TextUnitType.Sp),
                         fontWeight = FontWeight.SemiBold
                     )
@@ -151,7 +177,7 @@ fun MusicItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographySkModernist().body1.copy(
-                        color = typographySkModernist().body1.color.copy(alpha = 0.7f),
+                        color = if (isMusicPlayed) sunset_orange else typographySkModernist().body1.color.copy(alpha = 0.7f),
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                     ),
                     modifier = Modifier
@@ -167,7 +193,9 @@ fun MusicItem(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_clock),
-                            tint = if (isSystemInDarkTheme()) white.copy(alpha = 0.7f) else black.copy(alpha = 0.7f),
+                            tint = if (isMusicPlayed) sunset_orange else {
+                                if (isSystemInDarkTheme()) white.copy(alpha = 0.7f) else black.copy(alpha = 0.7f)
+                            },
                             contentDescription = null,
                             modifier = Modifier
                                 .size(14.dp)
@@ -176,7 +204,7 @@ fun MusicItem(
                         Text(
                             text = SimpleDateFormat("mm:ss", Locale.getDefault()).format(music.duration),
                             style = typographySkModernist().body1.copy(
-                                color = typographySkModernist().body1.color.copy(alpha = 0.7f),
+                                color = if (isMusicPlayed) sunset_orange else typographySkModernist().body1.color.copy(alpha = 0.7f),
                                 fontSize = TextUnit(12f, TextUnitType.Sp)
                             ),
                             modifier = Modifier
@@ -231,9 +259,7 @@ fun AlbumItem(
                 painter = rememberImagePainter(
                     data = run {
                         if (musicList.isNotEmpty()) {
-                            if (musicList[musicIndexForAlbumThumbnail].albumPath != null) {
-                                musicList[musicIndexForAlbumThumbnail].albumPath!!.toUri()
-                            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
+                            musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
                         } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
                     },
                     builder = {
@@ -245,8 +271,8 @@ fun AlbumItem(
                                     musicIndexForAlbumThumbnail += 1
                                     data(
                                         run {
-                                            if (musicList[musicIndexForAlbumThumbnail].albumPath != null) {
-                                                musicList[musicIndexForAlbumThumbnail].albumPath!!.toUri()
+                                            if (musicList.isNotEmpty()) {
+                                                musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
                                             } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
                                         }
                                     )

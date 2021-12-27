@@ -8,6 +8,8 @@ class FakeMusicRepository: MusicRepositoryImpl {
 
     override fun getMusic(audioID: Long, action: (Music) -> Unit) {}
 
+    override fun update(music: Music, action: () -> Unit) {}
+
     override fun deleteAllMusic(action: () -> Unit) {}
 
     override fun deleteMusic(music: Music, action: () -> Unit) {}

@@ -13,9 +13,6 @@ class SearchViewModel(
     private val repository: MusicRepositoryImpl
 ): ViewModel() {
 
-    private val _musicList = MutableLiveData<List<Music>>()
-    val musicList: LiveData<List<Music>> = _musicList
-
     private val _filteredMusic = MutableLiveData<List<Music>>()
     val filteredMusic: LiveData<List<Music>> = _filteredMusic
 
@@ -24,12 +21,6 @@ class SearchViewModel(
 
     private val _filteredAlbum = MutableLiveData<List<Music>>()
     val filteredAlbum: LiveData<List<Music>> = _filteredAlbum
-
-    init {
-        repository.getAllMusic { list ->
-            _musicList.value = list
-        }
-    }
 
     fun filter(s: String) {
         repository.getAllMusic { musicList ->

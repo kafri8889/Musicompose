@@ -1,10 +1,14 @@
 package com.anafthdev.musicompose.ui.home
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.net.Uri
+import android.media.AudioManager
 import android.os.Build
 import android.provider.MediaStore
+import android.view.View
+import android.view.WindowInsetsController
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -23,48 +27,50 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
+import androidx.compose.ui.window.Popup
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.toColor
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import androidx.palette.graphics.Palette
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.data.AppDatastore
+import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.ui.MainActivity
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.PopupMenu
+import com.anafthdev.musicompose.ui.components.SliderDefaults
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils
 import com.anafthdev.musicompose.utils.AppUtils.toast
+import com.anafthdev.musicompose.utils.ComposeUtils
 import com.anafthdev.musicompose.utils.ComposeUtils.LifecycleEventListener
+import com.anafthdev.musicompose.utils.ComposeUtils.currentFraction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okio.FileNotFoundException
+import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -81,7 +87,6 @@ fun HomeScreen(
 ) {
 
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
 
     val dropdownMenuItems = listOf(
         stringResource(id = R.string.scan_local_songs),
@@ -96,40 +101,57 @@ fun HomeScreen(
 
     val scope = rememberCoroutineScope()
     val modalBottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-    val scaffoldBottomSheetState = rememberBottomSheetScaffoldState(
+    val musicScaffoldBottomSheetState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
+    )
+    val playlistScaffoldBottomSheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     )
 
     val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
+    val currentMusicPlayMode by musicControllerViewModel.playMode.observeAsState(initial = MusicControllerViewModel.MusicPlayMode.REPEAT_ON)
+    val currentProgress by musicControllerViewModel.currentProgress.observeAsState(initial = 0f)
+    val currentVolume by musicControllerViewModel.currentVolume.observeAsState(initial = 0)
+    val musicDurationInMinute by musicControllerViewModel.musicDurationInMinute.observeAsState(initial = 0)
+    val musicDurationInSecond by musicControllerViewModel.musicDurationInSecond.observeAsState(initial = 0)
+    val currentMusicDurationInMinute by musicControllerViewModel.currentMusicDurationInMinute.observeAsState(initial = 0)
+    val currentMusicDurationInSecond by musicControllerViewModel.currentMusicDurationInSecond.observeAsState(initial = 0)
     val isMusicPlayed by musicControllerViewModel.isMusicPlayed.observeAsState(initial = false)
+    val isMusicFavorite by musicControllerViewModel.isMusicFavorite.observeAsState(initial = false)
+    val isVolumeMuted by musicControllerViewModel.isVolumeMuted.observeAsState(initial = false)
 
     val musicList by homeViewModel.musicList.observeAsState(initial = emptyList())
     val sortMusicOption by datastore.getSortMusicOption.collectAsState(initial = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME)
 
+    var maxStreamMusicVolume by remember { mutableStateOf(0) }
+
     var hasNavigate by remember { mutableStateOf(false) }
     var showDropdownMenu by remember { mutableStateOf(false) }
-    var darkBackgroundColor by remember { mutableStateOf(black) }
     var dominantBackgroundColor by remember { mutableStateOf(primary_light) }
-    var lightBackgroundColor by remember { mutableStateOf(white) }
 
     Palette.Builder(
         run {
-            if (currentMusicPlayed.albumPath != null) {
+            try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, currentMusicPlayed.albumPath!!.toUri())).copy(
-                        Bitmap.Config.RGBA_F16,
-                        true
-                    )
-                } else MediaStore.Images.Media.getBitmap(context.contentResolver, currentMusicPlayed.albumPath!!.toUri())
-            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!.toBitmap()
+                    ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(
+                            context.contentResolver,
+                            currentMusicPlayed.albumPath.toUri()
+                        )
+                    ).copy(Bitmap.Config.RGBA_F16, true)
+                } else MediaStore.Images.Media.getBitmap(context.contentResolver, currentMusicPlayed.albumPath.toUri())
+            } catch (e: FileNotFoundException) {
+                Timber.e(e)
+                return@run ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!.toBitmap()
+            }
         }
     ).generate { it?.let { palette ->
-        darkBackgroundColor = Color(palette.getDarkMutedColor(black.toArgb()))
         dominantBackgroundColor = Color(palette.getDominantColor(primary_light.toArgb()))
-        lightBackgroundColor = Color(palette.getDominantColor(white.toArgb()))
     } }
 
     if (!hasNavigate) {
+        maxStreamMusicVolume = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager).getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        musicControllerViewModel.playLastMusic(context)
         (context as MainActivity).LifecycleEventListener {
             if (it == Lifecycle.Event.ON_RESUME) {
                 scope.launch {
@@ -149,12 +171,16 @@ fun HomeScreen(
             modalBottomSheetState.isVisible -> scope.launch {
                 modalBottomSheetState.hide()
             }
-            scaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
-                scaffoldBottomSheetState.bottomSheetState.collapse()
+            musicScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
+                musicScaffoldBottomSheetState.bottomSheetState.collapse()
             }
             else -> (context as MainActivity).finishAffinity()
         }
     }
+
+    (context as MainActivity).window.statusBarColor = if (musicScaffoldBottomSheetState.bottomSheetState.isExpanded) {
+        ComposeUtils.darkenColor(dominantBackgroundColor, 0.7f).toArgb()
+    } else { if (isSystemInDarkTheme()) background_dark.toArgb() else background_light.toArgb() }
 
     // BottomSheet sort option
     ModalBottomSheetLayout(
@@ -185,9 +211,8 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                scope.launch {
-                                    datastore.setSortMusicOption(pair.second)
-                                    modalBottomSheetState.hide()
+                                datastore.setSortMusicOption(pair.second) {
+                                    scope.launch { modalBottomSheetState.hide() }
                                     homeViewModel.getAllMusic(context, pair.second)
                                 }
                             }
@@ -207,9 +232,8 @@ fun HomeScreen(
                         RadioButton(
                             selected = pair.second == sortMusicOption,
                             onClick = {
-                                scope.launch {
-                                    datastore.setSortMusicOption(pair.second)
-                                    modalBottomSheetState.hide()
+                                datastore.setSortMusicOption(pair.second) {
+                                    scope.launch { modalBottomSheetState.hide() }
                                     homeViewModel.getAllMusic(context, pair.second)
                                 }
                             },
@@ -222,55 +246,356 @@ fun HomeScreen(
             }
         }
     ) {
+
+        // BottomSheet MusicScreen
         BottomSheetScaffold(
-            scaffoldState = scaffoldBottomSheetState,
+            scaffoldState = musicScaffoldBottomSheetState,
             sheetPeekHeight = 0.dp,
             sheetContent = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    dominantBackgroundColor.copy(alpha = 0.3f),
-                                    darkBackgroundColor.copy(alpha = 0.6f),
-                                )
-                            )
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(background_content_dark.copy(alpha = 0.3f))
-                    ) {
-                        Card(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(24.dp),
+
+                // BottomSheet Playlist
+                BottomSheetScaffold(
+                    scaffoldState = playlistScaffoldBottomSheetState,
+                    sheetBackgroundColor = ComposeUtils.darkenColor(dominantBackgroundColor, 0.6f),
+                    sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    sheetPeekHeight = 64.dp,
+                    sheetContent = {
+                        Column(
                             modifier = Modifier
-                                .padding(top = 32.dp, start = 32.dp, end = 32.dp)
-                                .size(288.dp)
-                                .align(Alignment.CenterHorizontally)
+                                .fillMaxSize()
                         ) {
-                            Image(
-                                painter = rememberImagePainter(
-                                    data = run {
-                                        if (currentMusicPlayed.albumPath != null) {
-                                            currentMusicPlayed.albumPath!!.toUri()
-                                        } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
-                                    },
-                                    builder = {
-                                        error(R.drawable.ic_music_unknown)
-                                        placeholder(R.drawable.ic_music_unknown)
-                                    }
-                                ),
-                                contentDescription = null,
-                                contentScale = ContentScale.FillBounds,
+
+                            if (playlistScaffoldBottomSheetState.bottomSheetState.isCollapsed or (playlistScaffoldBottomSheetState.bottomSheetState.targetValue == BottomSheetValue.Collapsed)) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .alpha(1f - playlistScaffoldBottomSheetState.currentFraction)
+                                        .height(64.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 10.dp, bottom = 8.dp)
+                                            .size(36.dp, 4.dp)
+                                            .clip(RoundedCornerShape(100))
+                                            .background(white.copy(alpha = 0.6f))
+                                            .align(Alignment.CenterHorizontally)
+                                    )
+
+                                    Text(
+                                        text = stringResource(id = R.string.playlist),
+                                        style = typographyDmSans().body1.copy(
+                                            color = white.copy(alpha = 0.6f),
+                                            fontSize = TextUnit(16f, TextUnitType.Sp),
+                                            textAlign = TextAlign.Center
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                    )
+                                }
+                            }
+
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .background(sunset_orange)
                             )
                         }
                     }
-                }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(ComposeUtils.darkenColor(dominantBackgroundColor, 0.7f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp)
+                        ) {
+                            Card(
+                                elevation = 8.dp,
+                                shape = RoundedCornerShape(24.dp),
+                                modifier = Modifier
+                                    .padding(top = 32.dp)
+                                    .size(288.dp)
+                                    .align(Alignment.CenterHorizontally)
+                            ) {
+                                Image(
+                                    painter = rememberImagePainter(
+                                        data = currentMusicPlayed.albumPath.toUri(),
+                                        builder = {
+                                            error(R.drawable.ic_music_unknown)
+                                            placeholder(R.drawable.ic_music_unknown)
+                                        }
+                                    ),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                )
+                            }
+
+
+
+                            // Title, Artist, Favorite button
+                            Row(
+                                modifier = Modifier
+                                    .padding(top = 64.dp)
+                                    .fillMaxWidth()
+                            ) {
+
+                                // Title, Artist,
+                                Column(
+                                    modifier = Modifier
+                                        .weight(0.8f)
+                                        .padding(end = 8.dp)
+                                ) {
+
+                                    // Title
+                                    Text(
+                                        text = currentMusicPlayed.title,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = typographySkModernist().body1.copy(
+                                            color = white,
+                                            fontSize = TextUnit(16f, TextUnitType.Sp),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+
+                                    // Artist
+                                    Text(
+                                        text = currentMusicPlayed.artist,
+                                        style = typographyDmSans().body1.copy(
+                                            color= white.copy(alpha = 0.7f),
+                                            fontSize = TextUnit(14f, TextUnitType.Sp),
+                                            fontWeight = FontWeight.Normal
+                                        ),
+                                        modifier = Modifier
+                                            .padding(top = 12.dp)
+                                    )
+                                }
+
+                                // Favorite button
+                                IconButton(
+                                    onClick = {
+                                        musicControllerViewModel.setMusicFavorite(!isMusicFavorite)
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.2f)
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = if (isMusicFavorite) R.drawable.ic_favorite_selected else R.drawable.ic_favorite
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                    )
+                                }
+                            }  // Title, Artist, Favorite button ~
+
+
+
+                            // Slider, Music duration, Current music duration
+                            Column(
+                                modifier = Modifier
+                                    .padding(top = 16.dp)
+                                    .fillMaxWidth()
+                            ) {
+
+                                // Slider
+                                com.anafthdev.musicompose.ui.components.Slider(
+                                    value = currentProgress,
+                                    valueRange = 0f..TimeUnit.MILLISECONDS.toSeconds(currentMusicPlayed.duration).toFloat(),
+                                    thumbRadius = 6.dp,
+                                    onValueChange = { progress ->
+                                        musicControllerViewModel.setProgress(progress)
+                                    },
+                                    onValueChangeFinished = {
+                                        musicControllerViewModel.applyProgress()
+                                    },
+                                    colors = SliderDefaults.colors(
+                                        activeTrackColor = dominantBackgroundColor,
+                                        inactiveTrackColor = dominantBackgroundColor.copy(alpha = 0.24f),
+                                        thumbColor = dominantBackgroundColor
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                )
+
+                                // Music duration, Current music duration
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
+                                ) {
+
+                                    // Music duration
+                                    Text(
+                                        text = "$musicDurationInMinute:${if (musicDurationInSecond > 9) musicDurationInSecond else "0$musicDurationInSecond"}",
+                                        style = typographySkModernist().body1.copy(
+                                            color = white,
+                                            fontSize = TextUnit(14f, TextUnitType.Sp)
+                                        ),
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                    )
+
+
+
+                                    // Current music duration
+                                    Text(
+                                        text = "$currentMusicDurationInMinute:${if (currentMusicDurationInSecond > 9) currentMusicDurationInSecond else "0$currentMusicDurationInSecond"}",
+                                        style = typographySkModernist().body1.copy(
+                                            color = white,
+                                            fontSize = TextUnit(14f, TextUnitType.Sp)
+                                        ),
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .padding(end = 8.dp)
+                                    )
+                                }
+                            }  // Slider, Music duration, Current music duration ~
+
+
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 32.dp)
+                            ) {
+
+                                IconButton(
+                                    onClick = {
+                                        musicControllerViewModel.setPlayMode(
+                                            when (currentMusicPlayMode) {
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_OFF -> MusicControllerViewModel.MusicPlayMode.REPEAT_ON
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_ON -> MusicControllerViewModel.MusicPlayMode.REPEAT_ONE
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_ONE -> MusicControllerViewModel.MusicPlayMode.SHUFFLE
+                                                MusicControllerViewModel.MusicPlayMode.SHUFFLE -> MusicControllerViewModel.MusicPlayMode.REPEAT_OFF
+                                            }
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.1f)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = when (currentMusicPlayMode) {
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_OFF -> R.drawable.ic_repeate_off
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_ON -> R.drawable.ic_repeate_music
+                                                MusicControllerViewModel.MusicPlayMode.REPEAT_ONE -> R.drawable.ic_repeate_one
+                                                MusicControllerViewModel.MusicPlayMode.SHUFFLE -> R.drawable.ic_shuffle
+                                            }
+                                        ),
+                                        tint = white,
+                                        contentDescription = null
+                                    )
+                                }
+
+
+
+                                IconButton(
+                                    onClick = {
+
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.25f)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_previous_filled_rounded),
+                                        tint = white,
+                                        contentDescription = null
+                                    )
+                                }
+
+
+
+                                com.anafthdev.musicompose.ui.components.IconButton(
+                                    rippleRadius = 72.dp,
+                                    onClick = {
+                                        if (isMusicPlayed) {
+                                            musicControllerViewModel.pause()
+                                        } else musicControllerViewModel.resume()
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.3f, fill = false)
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(100))
+                                        .background(
+                                            ComposeUtils.darkenColor(
+                                                dominantBackgroundColor,
+                                                0.3f
+                                            )
+                                        )
+                                ) {
+                                    AnimatedContent(
+                                        targetState = isMusicPlayed,
+                                        transitionSpec = {
+                                            scaleIn(animationSpec = tween(300)) with
+                                                    scaleOut(animationSpec = tween(200))
+                                        }
+                                    ) { target ->
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (target) R.drawable.ic_pause_filled_rounded else R.drawable.ic_play_filled_rounded
+                                            ),
+                                            tint = white,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                        )
+                                    }
+                                }
+
+
+
+                                IconButton(
+                                    onClick = {
+
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.25f)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_next_filled_rounded),
+                                        tint = white,
+                                        contentDescription = null
+                                    )
+                                }
+
+
+
+                                IconButton(
+                                    onClick = {
+                                        musicControllerViewModel.muteVolume(context, !isVolumeMuted)
+                                    },
+                                    modifier = Modifier
+                                        .weight(0.1f)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = when {
+                                                isVolumeMuted -> R.drawable.ic_volume_mute_cross
+                                                !isVolumeMuted -> {
+                                                    if (currentVolume <= (maxStreamMusicVolume / 2)) R.drawable.ic_volume_low
+                                                    else R.drawable.ic_volume_high
+                                                }
+                                                else -> R.drawable.ic_volume_high
+                                            }
+                                        ),
+                                        tint = white,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }  // BottomSheet Playlist
             }
         ) {
             Scaffold(
@@ -357,12 +682,12 @@ fun HomeScreen(
                     ) {
                         LazyColumn(
                             modifier = Modifier
-                                .padding(bottom = 8.dp)
                                 .weight(1f)
                         ) {
                             items(musicList) { music ->
                                 MusicItem(
                                     music = music,
+                                    isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                                     onClick = {
                                         musicControllerViewModel.play(context, music.audioID)
                                     }
@@ -383,16 +708,36 @@ fun HomeScreen(
                                 interactionSource = MutableInteractionSource(),
                                 onClick = {
                                     scope.launch {
-                                        scaffoldBottomSheetState.bottomSheetState.expand()
+                                        musicScaffoldBottomSheetState.bottomSheetState.expand()
                                     }
                                 }
                             )
                     ) {
-                        LinearProgressIndicator(
-                            progress = 0.2f,
+                        Box(
+                            contentAlignment = Alignment.TopStart,
                             modifier = Modifier
                                 .fillMaxWidth()
-                        )
+                        ) {
+                            Divider(
+                                thickness = 1.dp,
+                                color = ComposeUtils.lightenColor(background_content_dark, 0.3f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            )
+
+                            LinearProgressIndicator(
+                                color = sunset_orange,
+                                backgroundColor = Color.Transparent,
+                                progress = run {
+                                    val normalizedProgress = (currentProgress - 0f) / (TimeUnit.MILLISECONDS.toSeconds(currentMusicPlayed.duration) - 0f)
+
+                                    Timber.i("Normalized Progress: $normalizedProgress")
+                                    return@run normalizedProgress
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            )
+                        }
 
                         Row(
                             modifier = Modifier
@@ -407,11 +752,7 @@ fun HomeScreen(
                             ) {
                                 Image(
                                     painter = rememberImagePainter(
-                                        data = run {
-                                            if (currentMusicPlayed.albumPath != null) {
-                                                currentMusicPlayed.albumPath!!.toUri()
-                                            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
-                                        },
+                                        data = currentMusicPlayed.albumPath.toUri(),
                                         builder = {
                                             error(R.drawable.ic_music_unknown)
                                             placeholder(R.drawable.ic_music_unknown)
@@ -485,23 +826,15 @@ fun HomeScreen(
                                                     scaleOut(animationSpec = tween(200))
                                         }
                                     ) { target ->
-                                        if (!target) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_play_filled_rounded),
-                                                tint = if (isSystemInDarkTheme()) background_light else background_dark,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                            )
-                                        } else {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_pause_filled_rounded),
-                                                tint = if (isSystemInDarkTheme()) background_light else background_dark,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (target) R.drawable.ic_pause_filled_rounded else R.drawable.ic_play_filled_rounded
+                                            ),
+                                            tint = if (isSystemInDarkTheme()) background_light else background_dark,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                        )
                                     }
                                 }
 
@@ -523,7 +856,7 @@ fun HomeScreen(
                     }
                 }
 
-            }
-        }
+            }  // Scaffold
+        }  // BottomSheet MusicScreen
     }
 }

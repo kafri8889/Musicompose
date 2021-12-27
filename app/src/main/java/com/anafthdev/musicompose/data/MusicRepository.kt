@@ -13,6 +13,10 @@ class MusicRepository(private val databaseUtil: DatabaseUtil): MusicRepositoryIm
         databaseUtil.getMusic(audioID, action)
     }
 
+    override fun update(music: Music, action: () -> Unit) {
+        databaseUtil.updateMusic(music, action)
+    }
+
     override fun deleteAllMusic(action: () -> Unit) {
         databaseUtil.deleteAllMusic(action)
     }

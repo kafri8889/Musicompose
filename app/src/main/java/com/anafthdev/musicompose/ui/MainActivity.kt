@@ -2,7 +2,9 @@ package com.anafthdev.musicompose.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,7 +17,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.anafthdev.musicompose.BuildConfig
-import com.anafthdev.musicompose.data.AppDatastore
+import com.anafthdev.musicompose.common.AppDatastore
+import com.anafthdev.musicompose.common.SettingsContentObserver
 import com.anafthdev.musicompose.data.MusicRepository
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.ui.home.HomeScreen
@@ -46,6 +49,11 @@ class MainActivity : ComponentActivity() {
 	private lateinit var homeViewModel: HomeViewModel
 	private lateinit var scanMusicViewModel: ScanMusicViewModel
 	private lateinit var searchViewModel: SearchViewModel
+
+	// if there is a volume change, it will call musicControllerViewModel.onVolumeChange()
+	private val settingsContentObserver = SettingsContentObserver {
+		musicControllerViewModel.onVolumeChange(this)
+	}
 	
 	private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
 		if (granted) {
@@ -68,12 +76,27 @@ class MainActivity : ComponentActivity() {
 			permissionResultLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
 		}
 
+		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+
 		databaseUtil = DatabaseUtil.getInstance(applicationContext)
 		datastore = AppDatastore.getInstance(applicationContext)
-		musicControllerViewModel = ViewModelProvider(this, MusicControllerViewModelFactory(MusicRepository(databaseUtil)))[MusicControllerViewModel::class.java]
 		homeViewModel = ViewModelProvider(this, HomeViewModelFactory(MusicRepository(databaseUtil)))[HomeViewModel::class.java]
 		scanMusicViewModel = ViewModelProvider(this, ScanMusicViewModelFactory(MusicRepository(databaseUtil)))[ScanMusicViewModel::class.java]
 		searchViewModel = ViewModelProvider(this, SearchViewModelFactory(MusicRepository(databaseUtil)))[SearchViewModel::class.java]
+		musicControllerViewModel = ViewModelProvider(
+			this,
+			MusicControllerViewModelFactory(
+				MusicRepository(databaseUtil),
+				datastore
+			)
+		)[MusicControllerViewModel::class.java]
+
+		// register SettingsContentObserver, used to observe changes in volume
+		contentResolver.registerContentObserver(
+			android.provider.Settings.System.CONTENT_URI,
+			true,
+			settingsContentObserver
+		)
 
 		setContent {
 			MusicomposeTheme {
@@ -114,9 +137,15 @@ class MainActivity : ComponentActivity() {
 			composable(MusicomposeDestination.SearchScreen) {
 				SearchScreen(
 					navController = navigationController,
-					searchViewModel = searchViewModel
+					searchViewModel = searchViewModel,
+					musicControllerViewModel = musicControllerViewModel
 				)
 			}
 		}
+	}
+
+	override fun onDestroy() {
+		super.onDestroy()
+		contentResolver.unregisterContentObserver(settingsContentObserver)
 	}
 }

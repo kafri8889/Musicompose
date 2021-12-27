@@ -15,6 +15,9 @@ interface MusicDAO {
     @Query("DELETE FROM music_table")
     suspend fun deleteAllMusic()
 
+    @Update
+    suspend fun update(music: Music)
+
     @Delete
     suspend fun deleteMusic(music: Music)
 

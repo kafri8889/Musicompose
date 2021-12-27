@@ -1,8 +1,9 @@
-package com.anafthdev.musicompose.utils
+package com.anafthdev.musicompose.common
 
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
 import timber.log.Timber
 
@@ -98,7 +99,7 @@ object MusicManager {
 						audioID = audioID,
 						displayName = displayName,
 						title = title,
-						artist = artist,
+						artist = if (artist.equals("<unknown>", true)) context.getString(R.string.unknown) else artist,
 						album = album,
 						albumID = albumId,
 						duration = duration,

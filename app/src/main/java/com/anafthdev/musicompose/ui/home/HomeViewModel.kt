@@ -1,15 +1,10 @@
 package com.anafthdev.musicompose.ui.home
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.*
-import com.anafthdev.musicompose.data.MusicRepository
 import com.anafthdev.musicompose.data.MusicRepositoryImpl
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.utils.AppUtils
-import com.anafthdev.musicompose.utils.AppUtils.toast
-import com.anafthdev.musicompose.utils.MusicManager
 import kotlinx.coroutines.launch
 import java.text.Collator
 import java.util.*

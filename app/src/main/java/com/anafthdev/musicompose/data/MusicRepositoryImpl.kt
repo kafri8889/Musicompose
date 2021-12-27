@@ -8,6 +8,8 @@ interface MusicRepositoryImpl {
 
     fun getMusic(audioID: Long, action: (Music) -> Unit)
 
+    fun update(music: Music, action: () -> Unit)
+
     fun deleteAllMusic(action: () -> Unit)
 
     fun deleteMusic(music: Music, action: () -> Unit)

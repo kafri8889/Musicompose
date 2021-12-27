@@ -12,5 +12,7 @@
     <string name="song">Song</string>
     <string name="artist">Artist</string>
     <string name="album">Album</string>
+    <string name="unknown">Unknown</string>
+    <string name="playlist">Playlist</string>
 
 </resources>

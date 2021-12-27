@@ -27,16 +27,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.data.FakeMusicRepository
 import com.anafthdev.musicompose.data.MusicomposeDestination
+import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.AlbumItem
 import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.TransparentButton
@@ -50,13 +49,13 @@ import com.anafthdev.musicompose.ui.theme.*
 @Composable
 fun SearchScreen(
     navController: NavHostController,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    musicControllerViewModel: MusicControllerViewModel
 ) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
-    val musicList by searchViewModel.musicList.observeAsState(initial = emptyList())
+    val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
     val filteredMusic by searchViewModel.filteredMusic.observeAsState(initial = emptyList())
     val filteredArtist by searchViewModel.filteredArtist.observeAsState(initial = emptyList())
     val filteredAlbum by searchViewModel.filteredAlbum.observeAsState(initial = emptyList())
@@ -220,6 +219,7 @@ fun SearchScreen(
                 items(filteredMusic) { music ->
                     MusicItem(
                         music = music,
+                        isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                         showImage = false,
                         showDuration = false,
                         onClick = {
@@ -366,16 +366,4 @@ fun SearchScreen(
             }
         }
     }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-fun SearchScreenPreview() {
-    val navController = rememberNavController()
-    val searchViewModel = SearchViewModel(FakeMusicRepository())
-
-    SearchScreen(
-        navController = navController,
-        searchViewModel = searchViewModel
-    )
 }

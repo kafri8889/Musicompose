@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 val white = Color(0xFFFFFFFF)
 val black = Color(0xFF222222)
 val pure_black = Color(0xFF000000)
+val sunset_orange = Color(0xFFFE554A)
 
 val Purple200 = Color(0xFFBB86FC)
 val Purple500 = Color(0xFF6200EE)

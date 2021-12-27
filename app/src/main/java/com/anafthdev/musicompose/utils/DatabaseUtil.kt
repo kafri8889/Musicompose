@@ -27,7 +27,13 @@ class DatabaseUtil(context: Context) {
         var music: Music? = null
         scope.launch {
             music = musicDao.getMusic(audioID)
-        }.invokeOnCompletion { postAction { action(music!!) } }
+        }.invokeOnCompletion { postAction { action(music ?: Music.unknown) } }
+    }
+
+    fun updateMusic(music: Music, action: () -> Unit) {
+        scope.launch {
+            musicDao.update(music)
+        }.invokeOnCompletion { postAction(action) }
     }
 
     fun deleteAllMusic(action: () -> Unit) {
