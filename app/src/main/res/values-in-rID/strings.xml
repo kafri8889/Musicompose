@@ -13,5 +13,8 @@
     <string name="album">Album</string>
     <string name="unknown">Tak dikenal</string>
     <string name="playlist">Daftar Putar</string>
+    <string name="add_to_playlist">Tambahkan ke daftar putar</string>
+    <string name="set_timer">Atur pengatur waktu</string>
+    <string name="play_all">Putar semua</string>
 
 </resources>

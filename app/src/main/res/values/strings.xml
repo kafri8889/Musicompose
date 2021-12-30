@@ -14,5 +14,8 @@
     <string name="album">Album</string>
     <string name="unknown">Unknown</string>
     <string name="playlist">Playlist</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="set_timer">Set timer</string>
+    <string name="play_all">Play all</string>
 
 </resources>

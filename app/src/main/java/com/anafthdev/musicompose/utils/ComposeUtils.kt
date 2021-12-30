@@ -4,16 +4,17 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material.BottomSheetScaffoldState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
 object ComposeUtils {
 
+    /**
+     * Activity Lifecycle
+     * @author kafri8889
+     */
     @Composable
     fun ComponentActivity.LifecycleEventListener(event: (Lifecycle.Event) -> Unit) {
         val eventHandler by rememberUpdatedState(newValue = event)

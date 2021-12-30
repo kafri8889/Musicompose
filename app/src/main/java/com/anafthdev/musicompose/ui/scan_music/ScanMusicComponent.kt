@@ -48,7 +48,7 @@ fun ScanMusicProgress(
 
 @Preview
 @Composable
-fun ScanMusicProgressPreview() {
+private fun ScanMusicProgressPreview() {
     ScanMusicProgress()
 }
 

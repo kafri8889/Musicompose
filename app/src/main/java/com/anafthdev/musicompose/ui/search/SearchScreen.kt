@@ -152,7 +152,12 @@ fun SearchScreen(
                             indication = rememberRipple(color = Color.Transparent),
                             onClick = {
                                 navController.navigate(MusicomposeDestination.HomeScreen) {
-                                    popUpTo(0)
+                                    popUpTo(0) {
+                                        saveState = true
+                                    }
+
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             },
                             modifier = Modifier

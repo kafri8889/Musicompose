@@ -99,7 +99,12 @@ fun ScanMusicScreen(
                scanMusicViewModel.scanLocalSong(context) {
                    Handler(Looper.getMainLooper()).postDelayed({
                        navController.navigate(MusicomposeDestination.HomeScreen) {
-                           popUpTo(0)
+                           popUpTo(0) {
+                               saveState = true
+                           }
+
+                           restoreState = true
+                           launchSingleTop = true
                        }
                    }, 1300)
                }
@@ -122,7 +127,7 @@ fun ScanMusicScreen(
 
 @Preview
 @Composable
-fun ScanMusicScreenPreview() {
+private fun ScanMusicScreenPreview() {
     val navController = rememberNavController()
 
     ScanMusicScreen(
