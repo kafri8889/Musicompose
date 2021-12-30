@@ -21,9 +21,22 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             minifyEnabled false
+            kotlinOptions {
+                freeCompilerArgs += [
+                        '-Xopt-in=kotlin.RequiresOptIn'
+                ]
+            }
+        }
+        release {
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            kotlinOptions {
+                freeCompilerArgs += [
+                        '-Xopt-in=kotlin.RequiresOptIn'
+                ]
+            }
         }
     }
     compileOptions {

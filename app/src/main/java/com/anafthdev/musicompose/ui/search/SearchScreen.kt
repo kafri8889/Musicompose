@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -153,11 +152,11 @@ fun SearchScreen(
                             onClick = {
                                 navController.navigate(MusicomposeDestination.HomeScreen) {
                                     popUpTo(0) {
-                                        saveState = true
+                                        saveState = false
                                     }
 
+                                    restoreState = false
                                     launchSingleTop = true
-                                    restoreState = true
                                 }
                             },
                             modifier = Modifier
@@ -187,7 +186,10 @@ fun SearchScreen(
         CompositionLocalProvider(
             LocalOverScrollConfiguration provides null
         ) {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(bottom = 64.dp)
+            ) {
 
                 item {
                     if (filteredMusic.isNotEmpty()) {
@@ -228,7 +230,7 @@ fun SearchScreen(
                         showImage = false,
                         showDuration = false,
                         onClick = {
-
+                            musicControllerViewModel.play(music.audioID)
                         },
                         modifier = Modifier
                             .padding(vertical = 4.dp)
@@ -238,13 +240,15 @@ fun SearchScreen(
                 item {
                     if (filteredArtist.isNotEmpty()) {
 
-                        Divider(
-                            color = background_content_dark,
-                            thickness = 1.4.dp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp)
-                        )
+                        if (filteredMusic.isNotEmpty()) {
+                            Divider(
+                                color = background_content_dark,
+                                thickness = 1.4.dp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp)
+                            )
+                        }
 
                         Box(
                             modifier = Modifier
@@ -298,7 +302,19 @@ fun SearchScreen(
 
                         IconButton(
                             onClick = {
+                                val route = "${
+                                    MusicomposeDestination.ArtistScreen
+                                }/${
+                                    music.artist
+                                }"
+                                navController.navigate(route) {
+                                    popUpTo(MusicomposeDestination.HomeScreen) {
+                                        saveState = false
+                                    }
 
+                                    restoreState = false
+                                    launchSingleTop = true
+                                }
                             }
                         ) {
                             Icon(
@@ -313,13 +329,15 @@ fun SearchScreen(
                 item {
                     if (albumList.isNotEmpty()) {
 
-                        Divider(
-                            color = background_content_dark,
-                            thickness = 1.4.dp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp)
-                        )
+                        if (filteredMusic.isNotEmpty() and filteredArtist.isNotEmpty()) {
+                            Divider(
+                                color = background_content_dark,
+                                thickness = 1.4.dp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp)
+                            )
+                        }
 
                         Box(
                             modifier = Modifier
@@ -351,11 +369,23 @@ fun SearchScreen(
                     }
                 }
 
-                items(albumList.size - 1) { i ->
+                items(albumList.size) { i ->
                     AlbumItem(
                         musicList = albumList[albumList.keys.toList()[i]]!!,
                         onClick = {
+                            val route = "${
+                                MusicomposeDestination.AlbumScreen
+                            }/${
+                                albumList[albumList.keys.toList()[i]]?.get(0)?.albumID ?: Music.unknown
+                            }"
+                            navController.navigate(route) {
+                                popUpTo(MusicomposeDestination.HomeScreen) {
+                                    saveState = false
+                                }
 
+                                restoreState = false
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }

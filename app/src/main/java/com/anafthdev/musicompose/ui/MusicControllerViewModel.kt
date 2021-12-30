@@ -67,6 +67,9 @@ class MusicControllerViewModel @Inject constructor(
     private val _isVolumeMuted = MutableLiveData(false)
     val isVolumeMuted: LiveData<Boolean> = _isVolumeMuted
 
+    private val _isMiniMusicPlayerHidden = MutableLiveData(false)
+    val isMiniMusicPlayerHidden: LiveData<Boolean> = _isMiniMusicPlayerHidden
+
     var onNext: (Int) -> Unit = {}
     var onPrevious: (Int) -> Unit = {}
     var musicSize = 0
@@ -75,6 +78,18 @@ class MusicControllerViewModel @Inject constructor(
     private var lastMusicPlayed = false
 
 //    private val mediaPlayer = MediaPlayer()
+
+    fun hideMiniMusicPlayer() {
+        viewModelScope.launch {
+            _isMiniMusicPlayerHidden.postValue(true)
+        }
+    }
+
+    fun collapseMiniMusicPlayer() {
+        viewModelScope.launch {
+            _isMiniMusicPlayerHidden.postValue(false)
+        }
+    }
 
     fun setMusicFavorite(favorite: Boolean) {
         _isMusicFavorite.value = favorite
@@ -97,7 +112,7 @@ class MusicControllerViewModel @Inject constructor(
         } else {
             audioManager.setStreamVolume(
                 AudioManager.STREAM_MUSIC,
-                lastVolumeValue,
+                if (lastVolumeValue == 0) 1 else lastVolumeValue,
                 0
             )
         }

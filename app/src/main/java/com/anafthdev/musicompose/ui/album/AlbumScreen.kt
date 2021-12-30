@@ -1,5 +1,6 @@
-package com.anafthdev.musicompose.ui.artist
+package com.anafthdev.musicompose.ui.album
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,7 +13,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -28,7 +28,10 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
@@ -38,20 +41,22 @@ import com.anafthdev.musicompose.ui.theme.*
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
-fun ArtistScreen(
-    artistName: String,
-    artistViewModel: ArtistViewModel,
+fun AlbumScreen(
+    albumID: String,
+    albumViewModel: AlbumViewModel,
     musicControllerViewModel: MusicControllerViewModel,
     navController: NavHostController
 ) {
 
     val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
-    val filteredMusicList by artistViewModel.filteredMusicList.observeAsState(initial = emptyList())
+    val artist by albumViewModel.artist.observeAsState(initial = Music.unknown.artist)
+    val album by albumViewModel.album.observeAsState(initial = Music.unknown.album)
+    val filteredMusicList by albumViewModel.filteredMusicList.observeAsState(initial = emptyList())
 
     var hasNavigate by remember { mutableStateOf(false) }
 
     if (!hasNavigate) {
-        artistViewModel.filterMusic(artistName)
+        albumViewModel.get(albumID)
         true.also { hasNavigate = it }
     }
 
@@ -78,7 +83,7 @@ fun ArtistScreen(
                 }
 
                 Text(
-                    text = artistName,
+                    text = album,
                     overflow = TextOverflow.Ellipsis,
                     style = typographyDmSans().body1.copy(
                         fontSize = TextUnit(16f, TextUnitType.Sp),
@@ -92,6 +97,65 @@ fun ArtistScreen(
             modifier = Modifier
                 .padding(bottom = 64.dp)
         ) {
+
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSystemInDarkTheme()) background_content_dark else background_content_light)
+                        .padding(14.dp)
+                ) {
+                    Image(
+                        painter = rememberImagePainter(
+                            data = run {
+                                if (filteredMusicList.isEmpty()) {
+                                    Music.unknown.albumPath
+                                } else filteredMusicList[0].albumPath
+                            },
+                            builder = {
+                                error(R.drawable.ic_music_unknown)
+                                placeholder(R.drawable.ic_music_unknown)
+                            }
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                    ) {
+                        Text(
+                            text = artist,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = typographyDmSans().body1.copy(
+                                fontSize = TextUnit(14f, TextUnitType.Sp),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+
+                        Text(
+                            text = album,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = typographySkModernist().body1.copy(
+                                color = typographySkModernist().body1.color.copy(alpha = 0.7f),
+                                fontSize = TextUnit(12f, TextUnitType.Sp),
+                            ),
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                        )
+                    }
+                }
+            }
+
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -104,7 +168,7 @@ fun ArtistScreen(
                                 musicControllerViewModel.playAll(filteredMusicList)
                             }
                         )
-                        .padding(bottom = 16.dp, start = 8.dp)
+                        .padding(bottom = 16.dp, top = 8.dp, start = 8.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -149,13 +213,13 @@ fun ArtistScreen(
                     thickness = 1.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
                 )
             }
 
             items(filteredMusicList) { music ->
                 MusicItem(
                     music = music,
+                    showImage = false,
                     isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                     onClick = {
                         musicControllerViewModel.play(music.audioID)

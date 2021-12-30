@@ -27,6 +27,18 @@ object AppUtils {
         return result
     }
 
+    /**
+     * Return a item containing only elements matching the given [predicate].
+     * @author kafri8889
+     */
+    fun <T> Collection<T>.get(predicate: (T) -> Boolean): T? {
+        this.forEach {
+            if (predicate(it)) return it
+        }
+
+        return null
+    }
+
     fun Any.toast(context: Context, length: Int = Toast.LENGTH_SHORT) =
         Toast.makeText(context, this.toString(), length).show()
 }

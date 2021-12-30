@@ -4,6 +4,8 @@ import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.data.MusicRepository
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
+import com.anafthdev.musicompose.ui.album.AlbumViewModel
+import com.anafthdev.musicompose.ui.artist.ArtistViewModel
 import com.anafthdev.musicompose.ui.home.HomeViewModel
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
 import com.anafthdev.musicompose.ui.search.SearchViewModel
@@ -38,6 +40,18 @@ class ApplicationModule(private val application: MusicomposeApplication) {
     @Singleton
     @Provides
     fun provideSearchViewModel(): SearchViewModel = SearchViewModel(
+        MusicRepository(provideDatabaseUtil())
+    )
+
+    @Singleton
+    @Provides
+    fun provideArtistViewModel(): ArtistViewModel = ArtistViewModel(
+        MusicRepository(provideDatabaseUtil())
+    )
+
+    @Singleton
+    @Provides
+    fun provideAlbumViewModel(): AlbumViewModel = AlbumViewModel(
         MusicRepository(provideDatabaseUtil())
     )
 

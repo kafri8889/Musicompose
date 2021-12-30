@@ -38,6 +38,7 @@ val on_surface_dark = white
 val on_surface_light = pure_black
 
 val background_content_dark = Color(0xFF555555)
+val background_content_light = Color(0xFFEEEEEE)
 
 val background_dark = black
 val background_light = white

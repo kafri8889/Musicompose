@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.data.FakeMusicRepository
 import com.anafthdev.musicompose.data.MusicomposeDestination
+import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.theme.black
 import com.anafthdev.musicompose.ui.theme.secondary_dark
 import com.anafthdev.musicompose.ui.theme.secondary_light
@@ -36,7 +37,8 @@ import com.anafthdev.musicompose.ui.theme.typographySkModernist
 @Composable
 fun ScanMusicScreen(
     navController : NavHostController,
-    scanMusicViewModel: ScanMusicViewModel
+    scanMusicViewModel: ScanMusicViewModel,
+    musicControllerViewModel: MusicControllerViewModel
 ) {
     val context = LocalContext.current
 
@@ -51,6 +53,8 @@ fun ScanMusicScreen(
     val markerActive by animateFloatAsState(
         targetValue = (scannedMusicInPercent.toFloat() / 100) * numberMarker
     )
+
+    musicControllerViewModel.hideMiniMusicPlayer()
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -100,10 +104,10 @@ fun ScanMusicScreen(
                    Handler(Looper.getMainLooper()).postDelayed({
                        navController.navigate(MusicomposeDestination.HomeScreen) {
                            popUpTo(0) {
-                               saveState = true
+                               saveState = false
                            }
 
-                           restoreState = true
+                           restoreState = false
                            launchSingleTop = true
                        }
                    }, 1300)
@@ -123,15 +127,4 @@ fun ScanMusicScreen(
             )
         }
     }
-}
-
-@Preview
-@Composable
-private fun ScanMusicScreenPreview() {
-    val navController = rememberNavController()
-
-    ScanMusicScreen(
-        navController = navController,
-        scanMusicViewModel = ScanMusicViewModel(FakeMusicRepository())
-    )
 }

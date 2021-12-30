@@ -23,6 +23,7 @@ class HomeViewModel(private val repository: MusicRepositoryImpl): ViewModel() {
         }
 
         repository.getAllMusic { list ->
+
             when (sortOption) {
                 AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME -> {
                     Collections.sort(list, Comparator { o1, o2 ->

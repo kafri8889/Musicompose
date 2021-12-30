@@ -7,4 +7,8 @@ object MusicomposeDestination {
     const val ScanMusicScreen = "Scan Music"
 
     const val SearchScreen = "Search screen"
+
+    const val ArtistScreen = "Artist screen"
+
+    const val AlbumScreen = "Album screen"
 }

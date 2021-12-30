@@ -173,7 +173,7 @@ fun MusicItem(
                 )
 
                 Text(
-                    text = music.artist,
+                    text = "${music.artist} • ${music.album}",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographySkModernist().body1.copy(
@@ -181,7 +181,7 @@ fun MusicItem(
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                     ),
                     modifier = Modifier
-                        .padding(top = if (showDuration) 2.dp else 6.dp)
+                        .padding(top = if (showDuration) 4.dp else 6.dp)
                 )
 
                 if (showDuration) {
@@ -228,7 +228,6 @@ fun MusicItem(
 )
 @Composable
 fun AlbumItem(
-//    album: Album,
     musicList: List<Music>,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
