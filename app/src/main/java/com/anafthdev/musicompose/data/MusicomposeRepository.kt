@@ -1,9 +1,10 @@
 package com.anafthdev.musicompose.data
 
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.utils.DatabaseUtil
 
-class MusicRepository(private val databaseUtil: DatabaseUtil): MusicRepositoryImpl {
+class MusicomposeRepository(private val databaseUtil: DatabaseUtil): MusicomposeRepositoryImpl {
 
     override fun getAllMusic(action: (List<Music>) -> Unit) {
         databaseUtil.getAllMusic(action)
@@ -13,7 +14,7 @@ class MusicRepository(private val databaseUtil: DatabaseUtil): MusicRepositoryIm
         databaseUtil.getMusic(audioID, action)
     }
 
-    override fun update(music: Music, action: () -> Unit) {
+    override fun updateMusic(music: Music, action: () -> Unit) {
         databaseUtil.updateMusic(music, action)
     }
 
@@ -31,6 +32,28 @@ class MusicRepository(private val databaseUtil: DatabaseUtil): MusicRepositoryIm
 
     override fun insertMusic(music: Music, action: () -> Unit) {
         databaseUtil.insertMusic(music, action)
+    }
+
+
+
+    override fun getAllPlaylist(action: (List<Playlist>) -> Unit) {
+        databaseUtil.getAllPlaylist(action)
+    }
+
+    override fun updatePlaylist(playlist: Playlist, action: () -> Unit) {
+        databaseUtil.updatePlaylist(playlist, action)
+    }
+
+    override fun deletePlaylist(playlist: Playlist, action: () -> Unit) {
+        databaseUtil.deletePlaylist(playlist, action)
+    }
+
+    override fun insertPlaylist(playlist: Playlist, action: () -> Unit) {
+        databaseUtil.insertPlaylist(playlist, action)
+    }
+
+    override fun insertPlaylist(playlist: List<Playlist>, action: () -> Unit) {
+        databaseUtil.insertPlaylist(playlist, action)
     }
 
 }

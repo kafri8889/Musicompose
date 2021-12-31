@@ -3,12 +3,12 @@ package com.anafthdev.musicompose.ui.artist
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.data.MusicRepository
+import com.anafthdev.musicompose.data.MusicomposeRepository
 import com.anafthdev.musicompose.model.Music
 import javax.inject.Inject
 
 class ArtistViewModel @Inject constructor(
-    private val repository: MusicRepository
+    private val repository: MusicomposeRepository
 ): ViewModel() {
 
     private val _filteredMusicList = MutableLiveData(emptyList<Music>())

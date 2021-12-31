@@ -17,5 +17,7 @@
     <string name="add_to_playlist">Add to playlist</string>
     <string name="set_timer">Set timer</string>
     <string name="play_all">Play all</string>
+    <string name="favorite">Favorite</string>
+    <string name="just_played">Just played</string>
 
 </resources>

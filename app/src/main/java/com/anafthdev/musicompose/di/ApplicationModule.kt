@@ -2,7 +2,7 @@ package com.anafthdev.musicompose.di
 
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.common.AppDatastore
-import com.anafthdev.musicompose.data.MusicRepository
+import com.anafthdev.musicompose.data.MusicomposeRepository
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.album.AlbumViewModel
 import com.anafthdev.musicompose.ui.artist.ArtistViewModel
@@ -28,38 +28,39 @@ class ApplicationModule(private val application: MusicomposeApplication) {
     @Singleton
     @Provides
     fun provideHomeViewModel(): HomeViewModel = HomeViewModel(
-        MusicRepository(provideDatabaseUtil())
+        application,
+        MusicomposeRepository(provideDatabaseUtil())
     )
 
     @Singleton
     @Provides
     fun provideScanMusicViewModel(): ScanMusicViewModel = ScanMusicViewModel(
-        MusicRepository(provideDatabaseUtil())
+        MusicomposeRepository(provideDatabaseUtil())
     )
 
     @Singleton
     @Provides
     fun provideSearchViewModel(): SearchViewModel = SearchViewModel(
-        MusicRepository(provideDatabaseUtil())
+        MusicomposeRepository(provideDatabaseUtil())
     )
 
     @Singleton
     @Provides
     fun provideArtistViewModel(): ArtistViewModel = ArtistViewModel(
-        MusicRepository(provideDatabaseUtil())
+        MusicomposeRepository(provideDatabaseUtil())
     )
 
     @Singleton
     @Provides
     fun provideAlbumViewModel(): AlbumViewModel = AlbumViewModel(
-        MusicRepository(provideDatabaseUtil())
+        MusicomposeRepository(provideDatabaseUtil())
     )
 
     @Singleton
     @Provides
     fun provideMusicControllerViewModel(): MusicControllerViewModel = MusicControllerViewModel(
         application,
-        MusicRepository(provideDatabaseUtil()),
+        MusicomposeRepository(provideDatabaseUtil()),
         provideAppDatastore()
     )
 

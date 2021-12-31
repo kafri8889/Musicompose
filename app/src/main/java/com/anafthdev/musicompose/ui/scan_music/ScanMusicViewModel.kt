@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.data.MusicRepositoryImpl
+import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.common.MusicManager
 
 class ScanMusicViewModel(
-    private val repository: MusicRepositoryImpl
+    private val repository: MusicomposeRepositoryImpl
 ): ViewModel() {
 
     private var _scannedMusicInPercent = MutableLiveData(0)

@@ -5,6 +5,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,6 +26,7 @@ import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -312,6 +316,113 @@ fun AlbumItem(
                         .padding(top = 6.dp)
                 )
             }
+
+        }
+    }
+}
+
+
+
+
+
+@OptIn(
+    ExperimentalMaterialApi::class,
+    ExperimentalUnitApi::class
+)
+@Composable
+fun PlaylistItem(
+    playlist: Playlist,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+
+    var musicIndexForAlbumThumbnail by remember { mutableStateOf(0) }
+
+    Card(
+        elevation = 0.dp,
+        backgroundColor = if (isSystemInDarkTheme()) background_dark else background_light,
+        shape = RoundedCornerShape(14.dp),
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp, top = 12.dp, bottom = 12.dp, end = 8.dp)
+                .background(if (isSystemInDarkTheme()) background_dark else background_light,)
+        ) {
+
+            Image(
+                painter = rememberImagePainter(
+                    data = playlist.defaultImage ?: if (playlist.musicList.isNotEmpty()) {
+                        playlist.musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
+                    } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!,
+                    builder = {
+                        error(R.drawable.ic_music_unknown)
+                        placeholder(R.drawable.ic_music_unknown)
+                        listener(
+                            onError = { _, _ ->
+                                if (musicIndexForAlbumThumbnail < playlist.musicList.size - 1) {
+                                    musicIndexForAlbumThumbnail += 1
+                                    data(
+                                        run {
+                                            if (playlist.musicList.isNotEmpty()) {
+                                                playlist.musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
+                                            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
+                                        }
+                                    )
+                                } else data(ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!)
+                            }
+                        )
+                    }
+                ),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            )
+
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp)
+            ) {
+                Text(
+                    text = playlist.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = typographyDmSans().body1.copy(
+                        fontSize = TextUnit(16f, TextUnitType.Sp),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+
+                Text(
+                    text = "${playlist.musicList.size} ${stringResource(id = R.string.song).lowercase()}",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = typographySkModernist().body1.copy(
+                        color = typographySkModernist().body1.color.copy(alpha = 0.7f),
+                        fontSize = TextUnit(14f, TextUnitType.Sp),
+                    ),
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowRight,
+                tint = if (isSystemInDarkTheme()) white.copy(alpha = 0.6f) else background_content_dark.copy(alpha = 0.6f),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(24.dp)
+            )
 
         }
     }

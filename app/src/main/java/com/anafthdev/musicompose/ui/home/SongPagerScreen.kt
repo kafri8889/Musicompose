@@ -1,20 +1,21 @@
-package com.anafthdev.musicompose.ui.artist
+package com.anafthdev.musicompose.ui.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,76 +24,37 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
-import com.anafthdev.musicompose.ui.components.MusicItem
-import com.anafthdev.musicompose.ui.theme.*
+import com.anafthdev.musicompose.ui.theme.background_content_dark
+import com.anafthdev.musicompose.ui.theme.sunset_orange
+import com.anafthdev.musicompose.ui.theme.typographyDmSans
+import com.anafthdev.musicompose.ui.theme.white
 
-@OptIn(ExperimentalUnitApi::class)
+@OptIn(
+    ExperimentalFoundationApi::class,
+    ExperimentalUnitApi::class
+)
 @Composable
-fun ArtistScreen(
-    artistName: String,
-    artistViewModel: ArtistViewModel,
+fun SongPagerScreen(
+    homeViewModel: HomeViewModel,
     musicControllerViewModel: MusicControllerViewModel,
-    navController: NavHostController
 ) {
 
+    val musicList by homeViewModel.musicList.observeAsState(initial = emptyList())
     val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
-    val filteredMusicList by artistViewModel.filteredMusicList.observeAsState(initial = emptyList())
 
-    var hasNavigate by remember { mutableStateOf(false) }
-
-    if (!hasNavigate) {
-        artistViewModel.filterMusic(artistName)
-        true.also { hasNavigate = it }
-    }
-
-    Scaffold(
-        topBar = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                IconButton(
-                    onClick = {
-                        navController.navigate(MusicomposeDestination.HomeScreen) {
-                            popUpTo(0)
-                        }
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBack,
-                        tint = if (isSystemInDarkTheme()) white else black,
-                        contentDescription = null
-                    )
-                }
-
-                Text(
-                    text = artistName,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = typographyDmSans().body1.copy(
-                        fontSize = TextUnit(16f, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                )
-            }
-        }
+    CompositionLocalProvider(
+        LocalOverScrollConfiguration provides null
     ) {
         LazyColumn(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(bottom = 64.dp)
         ) {
             item {
@@ -104,7 +66,7 @@ fun ArtistScreen(
                             indication = rememberRipple(color = Color.Transparent),
                             interactionSource = MutableInteractionSource(),
                             onClick = {
-                                musicControllerViewModel.playAll(filteredMusicList)
+                                musicControllerViewModel.playAll(musicList)
                             }
                         )
                         .padding(bottom = 16.dp, start = 8.dp)
@@ -136,7 +98,7 @@ fun ArtistScreen(
                     )
 
                     Text(
-                        text = "${filteredMusicList.size} ${stringResource(id = R.string.song).lowercase()}",
+                        text = "${musicList.size} ${stringResource(id = R.string.song).lowercase()}",
                         style = typographyDmSans().body1.copy(
                             color = typographyDmSans().body1.color.copy(alpha = 0.6f),
                             fontSize = TextUnit(14f, TextUnitType.Sp),
@@ -156,8 +118,8 @@ fun ArtistScreen(
                 )
             }
 
-            items(filteredMusicList) { music ->
-                MusicItem(
+            items(musicList) { music ->
+                com.anafthdev.musicompose.ui.components.MusicItem(
                     music = music,
                     isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                     onClick = {

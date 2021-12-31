@@ -376,7 +376,7 @@ fun SearchScreen(
                             val route = "${
                                 MusicomposeDestination.AlbumScreen
                             }/${
-                                albumList[albumList.keys.toList()[i]]?.get(0)?.albumID ?: Music.unknown
+                                albumList[albumList.keys.toList()[i]]?.get(0)?.albumID ?: Music.unknown.albumID
                             }"
                             navController.navigate(route) {
                                 popUpTo(MusicomposeDestination.HomeScreen) {

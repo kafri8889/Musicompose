@@ -20,20 +20,11 @@ class AppDatastore(context: Context): ContextWrapper(context) {
 
     private val Context.datastore: DataStore<Preferences> by preferencesDataStore("app_datastore")
 
-    private val appFirstInstall = booleanPreferencesKey(AppUtils.PreferencesKey.APP_FIRST_INSTALL)
     private val sortMusicOption = stringPreferencesKey(AppUtils.PreferencesKey.SORT_MUSIC_OPTION)
     private val lastMusicPlayed = longPreferencesKey(AppUtils.PreferencesKey.LAST_MUSIC_PLAYED)
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
     private fun postAction(action: () -> Unit) = Handler(Looper.getMainLooper()).post { action() }
-
-    suspend fun setAppFirstInstall(isFirstInstall: Boolean, action: () -> Unit) {
-        scope.launch {
-            datastore.edit { preferences ->
-                preferences[appFirstInstall] = isFirstInstall
-            }
-        }.invokeOnCompletion { postAction(action) }
-    }
 
     fun setSortMusicOption(option: String, action: () -> Unit) {
         scope.launch {
@@ -53,9 +44,7 @@ class AppDatastore(context: Context): ContextWrapper(context) {
 
 
 
-    val isAppFirstInstall: Flow<Boolean> = datastore.data.map { preferences ->
-        preferences[appFirstInstall] ?: true
-    }
+
 
     val getSortMusicOption: Flow<String> = datastore.data.map { preferences ->
         preferences[sortMusicOption] ?: AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME

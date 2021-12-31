@@ -16,5 +16,7 @@
     <string name="add_to_playlist">Tambahkan ke daftar putar</string>
     <string name="set_timer">Atur pengatur waktu</string>
     <string name="play_all">Putar semua</string>
+    <string name="favorite">Favorit</string>
+    <string name="just_played">Baru diputar</string>
 
 </resources>

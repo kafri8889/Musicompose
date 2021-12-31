@@ -1,16 +1,15 @@
 package com.anafthdev.musicompose.ui
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.content.Context
 import android.media.AudioManager
-import androidx.core.content.getSystemService
 import androidx.lifecycle.*
 import com.anafthdev.musicompose.MusicomposeApplication
+import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
-import com.anafthdev.musicompose.data.MusicRepositoryImpl
+import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
-import com.anafthdev.musicompose.utils.AppUtils.toast
+import com.anafthdev.musicompose.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -18,7 +17,6 @@ import kotlinx.coroutines.withContext
 import org.burnoutcrew.reorderable.ItemPosition
 import org.burnoutcrew.reorderable.move
 import timber.log.Timber
-import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.collections.ArrayList
@@ -26,7 +24,7 @@ import kotlin.collections.ArrayList
 @SuppressLint("StaticFieldLeak")
 class MusicControllerViewModel @Inject constructor(
     private val application: MusicomposeApplication,
-    private val repository: MusicRepositoryImpl,
+    private val repository: MusicomposeRepositoryImpl,
     private val appDatastore: AppDatastore
 ): ViewModel() {
 
@@ -72,7 +70,6 @@ class MusicControllerViewModel @Inject constructor(
 
     var onNext: (Int) -> Unit = {}
     var onPrevious: (Int) -> Unit = {}
-    var musicSize = 0
 
     private var lastVolumeValue = 0
     private var lastMusicPlayed = false
@@ -85,7 +82,7 @@ class MusicControllerViewModel @Inject constructor(
         }
     }
 
-    fun collapseMiniMusicPlayer() {
+    fun showMiniMusicPlayer() {
         viewModelScope.launch {
             _isMiniMusicPlayerHidden.postValue(false)
         }
@@ -93,6 +90,28 @@ class MusicControllerViewModel @Inject constructor(
 
     fun setMusicFavorite(favorite: Boolean) {
         _isMusicFavorite.value = favorite
+
+        if (_currentMusicPlayed.value!!.audioID != Music.unknown.audioID) {
+
+            // Update music
+            repository.updateMusic(_currentMusicPlayed.value!!.copy(isFavorite = _isMusicFavorite.value!!)) {
+
+                // Update playlist
+                repository.getAllMusic { mMusicList ->
+                    val filteredMusicList = mMusicList.filter { it.isFavorite }
+                    val favoritePlaylist = Playlist.favorite.copy(
+                        name = application.getString(R.string.favorite),
+                        musicList = filteredMusicList
+                    )
+
+                    repository.updatePlaylist(favoritePlaylist) {
+                        Timber.i("Playlist \"${favoritePlaylist.name}\" Updated")
+                    }
+                }
+
+                Timber.i("Music Updated")
+            }
+        }
     }
 
     fun setPlayMode(playMode: MusicPlayMode) {
@@ -101,7 +120,9 @@ class MusicControllerViewModel @Inject constructor(
 
     fun muteVolume(mIsVolumeMuted: Boolean) {
         val audioManager = application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
         if (mIsVolumeMuted) {
+
             lastVolumeValue = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 
             audioManager.setStreamVolume(
@@ -141,12 +162,13 @@ class MusicControllerViewModel @Inject constructor(
 
     fun getPlaylist() {
         repository.getAllMusic { musicList ->
-            musicSize = musicList.size
             _playlist.value = musicList.shuffled()
         }
     }
 
     fun onPlaylistReordered(oldPos: ItemPosition, newPos: ItemPosition) {
+
+        // Drag and drop list
         _playlist.value?.let { mPlaylist ->
             _playlist.value = ArrayList(mPlaylist).apply { move(oldPos.index, newPos.index) }
         }
@@ -164,7 +186,7 @@ class MusicControllerViewModel @Inject constructor(
                 _currentMusicPlayed.value?.let {
 
                     // Update music
-                    repository.update(it.copy(isFavorite = _isMusicFavorite.value ?: false)) {
+                    repository.updateMusic(it.copy(isFavorite = _isMusicFavorite.value ?: false)) {
                         Timber.i("Music Updated")
                     }
                 }

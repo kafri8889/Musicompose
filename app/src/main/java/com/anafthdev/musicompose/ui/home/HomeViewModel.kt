@@ -1,27 +1,39 @@
 package com.anafthdev.musicompose.ui.home
 
-import android.content.Context
 import androidx.lifecycle.*
-import com.anafthdev.musicompose.data.MusicRepositoryImpl
+import com.anafthdev.musicompose.MusicomposeApplication
+import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.utils.AppUtils
 import kotlinx.coroutines.launch
 import java.text.Collator
 import java.util.*
 
-class HomeViewModel(private val repository: MusicRepositoryImpl): ViewModel() {
+class HomeViewModel(
+    private val application: MusicomposeApplication,
+    private val repository: MusicomposeRepositoryImpl
+): ViewModel() {
 
-    private val _musicList = MutableLiveData<List<Music>>(emptyList())
+    private val _musicList = MutableLiveData(emptyList<Music>())
     val musicList: LiveData<List<Music>> = _musicList
 
+    private val _albumList = MutableLiveData(emptyMap<String, List<Music>>())
+    val albumList: LiveData<Map<String, List<Music>>> = _albumList
+
+    private val _artistList = MutableLiveData(emptyMap<String, List<Music>>())
+    val artistList: LiveData<Map<String, List<Music>>> = _artistList
+
+    private val _playlist = MutableLiveData(emptyList<Playlist>())
+    val playlist: LiveData<List<Playlist>> = _playlist
+
+    private val collator: Collator = Collator.getInstance(application.resources.configuration.locales[0]).apply {
+        strength = Collator.PRIMARY
+    }
+
     fun getAllMusic(
-        context: Context,
         sortOption: String = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME
     ) = viewModelScope.launch {
-        val collator = Collator.getInstance(context.resources.configuration.locales[0]).apply {
-            strength = Collator.PRIMARY
-        }
-
         repository.getAllMusic { list ->
 
             when (sortOption) {
@@ -45,7 +57,44 @@ class HomeViewModel(private val repository: MusicRepositoryImpl): ViewModel() {
                 })
             }
 
-            _musicList.postValue(list)
+            _musicList.value = list
+        }
+    }
+
+    fun getAllAlbum() {
+        repository.getAllMusic { mMusicList ->
+            _albumList.value = mMusicList.groupBy { it.album }.toSortedMap(
+                Comparator { o1, o2 ->
+                    return@Comparator collator.compare(o1, o2)
+                }
+            )
+        }
+    }
+
+    fun getAllArtist() {
+        repository.getAllMusic { mMusicList ->
+            _artistList.value = mMusicList.groupBy { it.artist }.toSortedMap(
+                Comparator { o1, o2 ->
+                    return@Comparator collator.compare(o1, o2)
+                }
+            )
+        }
+    }
+
+    fun getAllPlaylist() {
+        repository.getAllPlaylist { playlist ->
+            val defaultPlaylist = playlist.filter { it.isDefault }
+            val filteredPlaylist = playlist.filter { !it.isDefault }
+
+            Collections.sort(filteredPlaylist, Comparator { o1, o2 ->
+                return@Comparator collator.compare(o1.name, o2.name)
+            })
+
+            _playlist.value = filteredPlaylist.toMutableList().apply {
+                defaultPlaylist.forEachIndexed { i, playlist ->
+                    add(i, playlist)
+                }
+            }
         }
     }
 }

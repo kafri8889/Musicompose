@@ -6,7 +6,6 @@ import android.widget.Toast
 object AppUtils {
 
     object PreferencesKey {
-        const val APP_FIRST_INSTALL = "app_first_install"
         const val SORT_MUSIC_OPTION = "sort_music_option"
         const val LAST_MUSIC_PLAYED = "last_music_played"
     }

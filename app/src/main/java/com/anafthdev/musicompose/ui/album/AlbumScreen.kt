@@ -84,11 +84,14 @@ fun AlbumScreen(
 
                 Text(
                     text = album,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographyDmSans().body1.copy(
                         fontSize = TextUnit(16f, TextUnitType.Sp),
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    modifier = Modifier
+                        .padding(end = 8.dp)
                 )
             }
         }
@@ -213,6 +216,7 @@ fun AlbumScreen(
                     thickness = 1.dp,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
                 )
             }
 

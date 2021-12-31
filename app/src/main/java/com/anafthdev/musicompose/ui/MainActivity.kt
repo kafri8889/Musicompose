@@ -1,6 +1,7 @@
 package com.anafthdev.musicompose.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -69,6 +70,7 @@ import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.common.SettingsContentObserver
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.album.AlbumScreen
 import com.anafthdev.musicompose.ui.album.AlbumViewModel
 import com.anafthdev.musicompose.ui.artist.ArtistScreen
@@ -88,8 +90,12 @@ import com.anafthdev.musicompose.utils.AppUtils
 import com.anafthdev.musicompose.utils.AppUtils.toast
 import com.anafthdev.musicompose.utils.ComposeUtils
 import com.anafthdev.musicompose.utils.ComposeUtils.currentFraction
+import com.anafthdev.musicompose.utils.DatabaseUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
@@ -104,6 +110,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
 	@Inject lateinit var datastore: AppDatastore
+	@Inject lateinit var databaseUtil: DatabaseUtil
 	@Inject lateinit var musicControllerViewModel: MusicControllerViewModel
 	@Inject lateinit var homeViewModel: HomeViewModel
 	@Inject lateinit var scanMusicViewModel: ScanMusicViewModel
@@ -115,16 +122,14 @@ class MainActivity : ComponentActivity() {
 	private val settingsContentObserver = SettingsContentObserver {
 		musicControllerViewModel.onVolumeChange()
 	}
-	
-	private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-		if (granted) {
 
-		} else {
+	private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+		if (!granted) {
 			"You must grant permission!".toast(this, Toast.LENGTH_LONG)
 			finishAffinity()
 		}
 	}
-	
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		(applicationContext as MusicomposeApplication).appComponent.inject(this)
@@ -147,6 +152,34 @@ class MainActivity : ComponentActivity() {
 			settingsContentObserver
 		)
 
+		val defaultPlaylist = listOf(
+			Playlist(
+				name = getString(R.string.favorite),
+				musicList = emptyList(),
+				defaultImage = R.drawable.ic_favorite_image,
+				isDefault = true,
+				id = 0
+			),
+			Playlist(
+				name = getString(R.string.just_played),
+				musicList = emptyList(),
+				defaultImage = R.drawable.ic_just_played_image,
+				isDefault = true,
+				id = 1
+			)
+		)
+
+		// check if default playlist exists or not, if not add playlist
+		databaseUtil.getAllPlaylist { playlist ->
+			defaultPlaylist.forEach {
+				if (!playlist.contains(it)) {
+					databaseUtil.insertPlaylist(it) {
+						Timber.i("playlist \"${it.name}\" created")
+					}
+				}
+			}
+		}
+
 		setContent {
 			MusicomposeTheme {
 				Surface(color = MaterialTheme.colors.background) {
@@ -156,6 +189,8 @@ class MainActivity : ComponentActivity() {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
+	@SuppressLint("CoroutineCreationDuringComposition")
 	@OptIn(
 		ExperimentalFoundationApi::class,
 		ExperimentalAnimationApi::class,
@@ -197,7 +232,7 @@ class MainActivity : ComponentActivity() {
 		val isMusicFavorite by musicControllerViewModel.isMusicFavorite.observeAsState(initial = false)
 		val isVolumeMuted by musicControllerViewModel.isVolumeMuted.observeAsState(initial = false)
 		val isMiniMusicPlayerHidden by musicControllerViewModel.isMiniMusicPlayerHidden.observeAsState(initial = false)
-		
+
 		var hasNavigate by remember { mutableStateOf(false) }
 		var maxStreamMusicVolume by remember { mutableStateOf(0) }
 		var dominantBackgroundColor by remember { mutableStateOf(primary_light) }
@@ -205,6 +240,7 @@ class MainActivity : ComponentActivity() {
 		if (!hasNavigate) {
 			maxStreamMusicVolume = (getSystemService(Context.AUDIO_SERVICE) as AudioManager).getStreamMaxVolume(AudioManager.STREAM_MUSIC)
 			musicControllerViewModel.playLastMusic()
+
 			true.also { hasNavigate = it }
 		}
 
@@ -236,6 +272,8 @@ class MainActivity : ComponentActivity() {
 				else -> finishAffinity()
 			}
 		}
+
+		musicControllerViewModel.setMusicFavorite(isMusicFavorite)
 
 		window.statusBarColor = if (musicScaffoldBottomSheetState.bottomSheetState.isExpanded) {
 			ComposeUtils.darkenColor(dominantBackgroundColor, 0.7f).toArgb()

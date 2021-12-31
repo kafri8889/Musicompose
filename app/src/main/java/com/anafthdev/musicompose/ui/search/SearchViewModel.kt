@@ -3,14 +3,14 @@ package com.anafthdev.musicompose.ui.search
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.data.MusicRepositoryImpl
+import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
 import timber.log.Timber
 import java.util.*
 import kotlin.collections.ArrayList
 
 class SearchViewModel(
-    private val repository: MusicRepositoryImpl
+    private val repository: MusicomposeRepositoryImpl
 ): ViewModel() {
 
     private val _filteredMusic = MutableLiveData<List<Music>>()

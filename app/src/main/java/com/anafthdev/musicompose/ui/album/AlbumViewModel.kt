@@ -3,13 +3,13 @@ package com.anafthdev.musicompose.ui.album
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.data.MusicRepository
+import com.anafthdev.musicompose.data.MusicomposeRepository
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.utils.AppUtils.get
 import javax.inject.Inject
 
 class AlbumViewModel @Inject constructor(
-    private val repository: MusicRepository
+    private val repository: MusicomposeRepository
 ): ViewModel() {
 
     private val _artist = MutableLiveData(Music.unknown.artist)

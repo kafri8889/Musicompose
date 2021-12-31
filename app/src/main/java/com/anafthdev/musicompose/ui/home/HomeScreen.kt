@@ -2,29 +2,20 @@ package com.anafthdev.musicompose.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.ExperimentalUnitApi
@@ -36,23 +27,25 @@ import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.data.MusicomposeDestination
-import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.ui.MainActivity
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
-import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.PopupMenu
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils
 import com.anafthdev.musicompose.utils.ComposeUtils.LifecycleEventListener
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.pagerTabIndicatorOffset
+import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(
-    ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class,
     ExperimentalMaterialApi::class,
+    ExperimentalPagerApi::class,
     ExperimentalUnitApi::class
 )
 @Composable
@@ -76,27 +69,41 @@ fun HomeScreen(
         stringResource(id = R.string.artist_name) to AppUtils.PreferencesValue.SORT_MUSIC_BY_ARTIST_NAME,
     )
 
+    val pages = listOf(
+        stringResource(id = R.string.song),
+        stringResource(id = R.string.album),
+        stringResource(id = R.string.artist),
+        stringResource(id = R.string.playlist),
+    )
+
     val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState()
     val modalBottomSheetSortOptionState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
-    val musicList by homeViewModel.musicList.observeAsState(initial = emptyList())
-    val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
     val sortMusicOption by datastore.getSortMusicOption.collectAsState(initial = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME)
 
     var hasNavigate by remember { mutableStateOf(false) }
     var showDropdownMenu by remember { mutableStateOf(false) }
 
-    musicControllerViewModel.collapseMiniMusicPlayer()
+    musicControllerViewModel.showMiniMusicPlayer()
+
+    // get all playlist when currentPage is "playlist"
+    if (pagerState.currentPage == 3) {
+        homeViewModel.getAllPlaylist()
+    }
 
     if (!hasNavigate) {
         (context as MainActivity).LifecycleEventListener {
             if (it == Lifecycle.Event.ON_RESUME) {
                 scope.launch {
+
+                    // get current sort music option and get all music
                     datastore.getSortMusicOption.collect { option ->
                         withContext(Dispatchers.Main) {
-                            homeViewModel.getAllMusic(context, option)
+                            homeViewModel.getAllMusic(option)
                         }
                     }
+
                 }
             }
         }
@@ -109,6 +116,11 @@ fun HomeScreen(
                 modalBottomSheetSortOptionState.hide()
             }
         }
+    }
+
+    when {
+        modalBottomSheetSortOptionState.isVisible -> musicControllerViewModel.hideMiniMusicPlayer()
+        !modalBottomSheetSortOptionState.isVisible -> musicControllerViewModel.showMiniMusicPlayer()
     }
 
     // BottomSheet sort option
@@ -144,7 +156,7 @@ fun HomeScreen(
                             .clickable {
                                 datastore.setSortMusicOption(pair.second) {
                                     scope.launch { modalBottomSheetSortOptionState.hide() }
-                                    homeViewModel.getAllMusic(context, pair.second)
+                                    homeViewModel.getAllMusic(pair.second)
                                 }
                             }
                     ) {
@@ -165,7 +177,7 @@ fun HomeScreen(
                             onClick = {
                                 datastore.setSortMusicOption(pair.second) {
                                     scope.launch { modalBottomSheetSortOptionState.hide() }
-                                    homeViewModel.getAllMusic(context, pair.second)
+                                    homeViewModel.getAllMusic(pair.second)
                                 }
                             },
                             modifier = Modifier
@@ -253,92 +265,78 @@ fun HomeScreen(
                 }
             }
         ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                CompositionLocalProvider(
-                    LocalOverScrollConfiguration provides null
+                ScrollableTabRow(
+                    backgroundColor = if (isSystemInDarkTheme()) black else white,
+                    selectedTabIndex = pagerState.currentPage,
+                    edgePadding = 8.dp,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            height = 2.4f.dp,
+                            color = sunset_orange,
+                            modifier = Modifier
+                                .pagerTabIndicatorOffset(pagerState, tabPositions)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                    }
                 ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(bottom = 64.dp)
-                    ) {
-                        item {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        indication = rememberRipple(color = Color.Transparent),
-                                        interactionSource = MutableInteractionSource(),
-                                        onClick = {
-                                            musicControllerViewModel.playAll(musicList)
-                                        }
-                                    )
-                                    .padding(bottom = 16.dp, start = 8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(RoundedCornerShape(100))
-                                        .background(sunset_orange)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_play_filled_rounded),
-                                        tint = white,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(14.dp)
-                                            .align(Alignment.Center)
-                                    )
-                                }
-
+                    pages.forEachIndexed { index, label ->
+                        Tab(
+                            selected = pagerState.currentPage == index,
+                            selectedContentColor = Color.Transparent,
+                            text = {
                                 Text(
-                                    text = stringResource(id = R.string.play_all),
+                                    text = label,
+                                    maxLines = 1,
                                     style = typographyDmSans().body1.copy(
+                                        color = if (pagerState.currentPage == index) sunset_orange
+                                                else { if (isSystemInDarkTheme()) white else black },
                                         fontSize = TextUnit(14f, TextUnitType.Sp),
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
                                 )
-
-                                Text(
-                                    text = "${musicControllerViewModel.musicSize} ${stringResource(id = R.string.song).lowercase()}",
-                                    style = typographyDmSans().body1.copy(
-                                        color = typographyDmSans().body1.color.copy(alpha = 0.6f),
-                                        fontSize = TextUnit(14f, TextUnitType.Sp),
-                                        fontWeight = FontWeight.Light
-                                    ),
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
-                                )
-                            }
-
-                            Divider(
-                                color = background_content_dark,
-                                thickness = 1.dp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp)
-                            )
-                        }
-
-                        items(musicList) { music ->
-                            MusicItem(
-                                music = music,
-                                isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
-                                onClick = {
-                                    musicControllerViewModel.play(music.audioID)
-                                    musicControllerViewModel.getPlaylist()
+                            },
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
                                 }
-                            )
-                        }
+                            },
+                        )
+                    }
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    count = pages.size,
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                ) { page ->
+                    when (page) {
+                        0 -> SongPagerScreen(
+                            homeViewModel = homeViewModel,
+                            musicControllerViewModel = musicControllerViewModel
+                        )
+                        1 -> AlbumPagerScreen(
+                            homeViewModel = homeViewModel,
+                            navController = navController,
+                        )
+                        2 -> ArtistPagerScreen(
+                            homeViewModel = homeViewModel,
+                            navController = navController,
+                        )
+                        3 -> PlaylistPagerScreen(
+                            homeViewModel = homeViewModel,
+                            navController = navController,
+                        )
                     }
                 }
             }
+
         }
     }
 }
