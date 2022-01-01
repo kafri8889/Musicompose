@@ -3,6 +3,9 @@ package com.anafthdev.musicompose.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
+import androidx.compose.material.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.*
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
@@ -68,6 +71,25 @@ class MusicControllerViewModel @Inject constructor(
     private val _isMiniMusicPlayerHidden = MutableLiveData(false)
     val isMiniMusicPlayerHidden: LiveData<Boolean> = _isMiniMusicPlayerHidden
 
+    @OptIn(ExperimentalMaterialApi::class)
+    val musicControllerState: LiveData<MusicControllerState> = MutableLiveData(
+        MusicControllerState(
+            playlistScaffoldBottomSheetState = BottomSheetScaffoldState(
+                drawerState = DrawerState(DrawerValue.Closed),
+                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
+                snackbarHostState = SnackbarHostState()
+            ),
+            musicScaffoldBottomSheetState = BottomSheetScaffoldState(
+                drawerState = DrawerState(DrawerValue.Closed),
+                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
+                snackbarHostState = SnackbarHostState()
+            ),
+            modalBottomSheetMusicInfoState = ModalBottomSheetState(
+                ModalBottomSheetValue.Hidden
+            ),
+        )
+    )
+
     var onNext: (Int) -> Unit = {}
     var onPrevious: (Int) -> Unit = {}
 
@@ -89,12 +111,10 @@ class MusicControllerViewModel @Inject constructor(
     }
 
     fun setMusicFavorite(favorite: Boolean) {
-        _isMusicFavorite.value = favorite
-
         if (_currentMusicPlayed.value!!.audioID != Music.unknown.audioID) {
 
             // Update music
-            repository.updateMusic(_currentMusicPlayed.value!!.copy(isFavorite = _isMusicFavorite.value!!)) {
+            repository.updateMusic(_currentMusicPlayed.value!!.copy(isFavorite = favorite)) {
 
                 // Update playlist
                 repository.getAllMusic { mMusicList ->
@@ -105,6 +125,7 @@ class MusicControllerViewModel @Inject constructor(
                     )
 
                     repository.updatePlaylist(favoritePlaylist) {
+                        _isMusicFavorite.value = favorite
                         Timber.i("Playlist \"${favoritePlaylist.name}\" Updated")
                     }
                 }
@@ -183,14 +204,6 @@ class MusicControllerViewModel @Inject constructor(
     fun play(audioID: Long, isPlayLastMusic: Boolean = false) {
         repository.getMusic(audioID) { music ->
             appDatastore.setLastMusicPlayed(music.audioID) {
-                _currentMusicPlayed.value?.let {
-
-                    // Update music
-                    repository.updateMusic(it.copy(isFavorite = _isMusicFavorite.value ?: false)) {
-                        Timber.i("Music Updated")
-                    }
-                }
-
                 _currentMusicPlayed.value = music
                 _isMusicPlayed.value = true
                 _isMusicFavorite.value = music.isFavorite
@@ -261,6 +274,20 @@ class MusicControllerViewModel @Inject constructor(
 
         onPrevious(currentMusicIndex)
     }
+
+    fun newPlaylist(playlist: Playlist, action: () -> Unit = {}) {
+        repository.insertPlaylist(playlist, action)
+    }
+
+    fun deletePlaylist(playlist: Playlist, action: () -> Unit = {}) {
+        repository.deletePlaylist(playlist, action)
+    }
+
+    data class MusicControllerState @OptIn(ExperimentalMaterialApi::class) constructor(
+        val playlistScaffoldBottomSheetState: BottomSheetScaffoldState,
+        val musicScaffoldBottomSheetState: BottomSheetScaffoldState,
+        val modalBottomSheetMusicInfoState: ModalBottomSheetState,
+    )
 
     enum class MusicPlayMode {
         REPEAT_OFF,

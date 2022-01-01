@@ -23,6 +23,8 @@ class FakeMusicomposeRepository: MusicomposeRepositoryImpl {
 
     override fun getAllPlaylist(action: (List<Playlist>) -> Unit) {}
 
+    override fun getPlaylist(playlistID: Int, action: (Playlist) -> Unit) {}
+
     override fun updatePlaylist(playlist: Playlist, action: () -> Unit) {}
 
     override fun deletePlaylist(playlist: Playlist, action: () -> Unit) {}

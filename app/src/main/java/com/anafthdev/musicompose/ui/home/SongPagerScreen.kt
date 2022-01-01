@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
+import com.anafthdev.musicompose.ui.components.PlayAllSongButton
 import com.anafthdev.musicompose.ui.theme.background_content_dark
 import com.anafthdev.musicompose.ui.theme.sunset_orange
 import com.anafthdev.musicompose.ui.theme.typographyDmSans
@@ -58,63 +59,9 @@ fun SongPagerScreen(
                 .padding(bottom = 64.dp)
         ) {
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            indication = rememberRipple(color = Color.Transparent),
-                            interactionSource = MutableInteractionSource(),
-                            onClick = {
-                                musicControllerViewModel.playAll(musicList)
-                            }
-                        )
-                        .padding(bottom = 16.dp, start = 8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(100))
-                            .background(sunset_orange)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_play_filled_rounded),
-                            tint = white,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(14.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(id = R.string.play_all),
-                        style = typographyDmSans().body1.copy(
-                            fontSize = TextUnit(14f, TextUnitType.Sp),
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                    )
-
-                    Text(
-                        text = "${musicList.size} ${stringResource(id = R.string.song).lowercase()}",
-                        style = typographyDmSans().body1.copy(
-                            color = typographyDmSans().body1.color.copy(alpha = 0.6f),
-                            fontSize = TextUnit(14f, TextUnitType.Sp),
-                            fontWeight = FontWeight.Light
-                        ),
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                    )
-                }
-
-                Divider(
-                    color = background_content_dark,
-                    thickness = 1.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                PlayAllSongButton(
+                    musicList = musicList,
+                    musicControllerViewModel = musicControllerViewModel
                 )
             }
 

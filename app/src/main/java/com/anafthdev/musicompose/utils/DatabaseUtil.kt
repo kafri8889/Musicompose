@@ -73,6 +73,13 @@ class DatabaseUtil(context: Context) {
         }.invokeOnCompletion { postAction { action(playlist) } }
     }
 
+    fun getPlaylist(playlistID: Int, action: (Playlist) -> Unit) {
+        var playlist = Playlist.unknown
+        scope.launch {
+            playlist = playlistDao.getPlaylist(playlistID)
+        }.invokeOnCompletion { postAction { action(playlist) } }
+    }
+
     fun updatePlaylist(playlist: Playlist, action: () -> Unit) {
         scope.launch {
             playlistDao.update(playlist)

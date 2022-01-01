@@ -38,7 +38,10 @@ class SearchViewModel(
                     for (music in musicList) {
                         when (type) {
                             TYPE_MUSIC -> {
-                                if (music.title.lowercase(Locale.getDefault()).contains(s, true)) {
+                                val containTitle = music.title.lowercase(Locale.getDefault()).contains(s, true)
+                                val containArtist = music.artist.lowercase(Locale.getDefault()).contains(s, true)
+
+                                if (containTitle or containArtist) {
                                     filteredList.add(music)
                                 }
                             }

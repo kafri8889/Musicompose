@@ -1,15 +1,49 @@
 package com.anafthdev.musicompose.utils
 
+import android.graphics.Rect
+import android.view.ViewTreeObserver
+import android.view.WindowInsets
 import androidx.activity.ComponentActivity
 import androidx.compose.material.BottomSheetScaffoldState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
 object ComposeUtils {
+
+    enum class Keyboard {
+        Opened, Closed
+    }
+
+    @Composable
+    fun keyboardAsState(): State<Keyboard> {
+        val keyboardState = remember { mutableStateOf(Keyboard.Closed) }
+        val view = LocalView.current
+        DisposableEffect(view) {
+            val onGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {
+                val rect = Rect()
+                view.getWindowVisibleDisplayFrame(rect)
+                val screenHeight = view.rootView.height
+                val keypadHeight = screenHeight - rect.bottom
+                keyboardState.value = if (keypadHeight > screenHeight * 0.15) {
+                    Keyboard.Opened
+                } else {
+                    Keyboard.Closed
+                }
+            }
+            view.viewTreeObserver.addOnGlobalLayoutListener(onGlobalListener)
+
+            onDispose {
+                view.viewTreeObserver.removeOnGlobalLayoutListener(onGlobalListener)
+            }
+        }
+
+        return keyboardState
+    }
 
     /**
      * Activity Lifecycle

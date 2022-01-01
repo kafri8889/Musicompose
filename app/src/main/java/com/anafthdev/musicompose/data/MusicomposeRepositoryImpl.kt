@@ -23,6 +23,8 @@ interface MusicomposeRepositoryImpl {
 
     fun getAllPlaylist(action: (List<Playlist>) -> Unit)
 
+    fun getPlaylist(playlistID: Int, action: (Playlist) -> Unit)
+
     fun updatePlaylist(playlist: Playlist, action: () -> Unit)
 
     fun deletePlaylist(playlist: Playlist, action: () -> Unit)

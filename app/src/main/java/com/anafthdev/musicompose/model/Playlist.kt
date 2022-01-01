@@ -16,6 +16,11 @@ data class Playlist(
     @PrimaryKey val id: Int = Random.nextInt()
 ) {
     companion object {
+        val unknown = Playlist(
+            name = "<unknown>",
+            musicList = emptyList()
+        )
+
         val favorite = Playlist(
             name = "Favorite",
             musicList = emptyList(),

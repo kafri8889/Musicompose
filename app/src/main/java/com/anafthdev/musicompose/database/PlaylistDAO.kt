@@ -7,18 +7,21 @@ import com.anafthdev.musicompose.model.Playlist
 interface PlaylistDAO {
 
     @Query("SELECT * FROM playlist_table")
-    fun getAllPlaylist(): List<Playlist>
+    suspend fun getAllPlaylist(): List<Playlist>
+
+    @Query("SELECT * FROM playlist_table WHERE id LIKE :playlistID")
+    suspend fun getPlaylist(playlistID: Int): Playlist
 
     @Update
-    fun update(playlist: Playlist)
+    suspend fun update(playlist: Playlist)
 
     @Delete
-    fun delete(playlist: Playlist)
+    suspend fun delete(playlist: Playlist)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(playlist: Playlist)
+    suspend fun insert(playlist: Playlist)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(playlist: List<Playlist>)
+    suspend fun insert(playlist: List<Playlist>)
 
 }

@@ -1,5 +1,6 @@
 package com.anafthdev.musicompose.ui.home
 
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,6 +83,23 @@ fun HomeScreen(
     val modalBottomSheetSortOptionState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
     val sortMusicOption by datastore.getSortMusicOption.collectAsState(initial = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME)
+    val musicControllerState by musicControllerViewModel.musicControllerState.observeAsState(
+        initial = MusicControllerViewModel.MusicControllerState(
+            playlistScaffoldBottomSheetState = BottomSheetScaffoldState(
+                drawerState = DrawerState(DrawerValue.Closed),
+                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
+                snackbarHostState = SnackbarHostState()
+            ),
+            musicScaffoldBottomSheetState = BottomSheetScaffoldState(
+                drawerState = DrawerState(DrawerValue.Closed),
+                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
+                snackbarHostState = SnackbarHostState()
+            ),
+            modalBottomSheetMusicInfoState = ModalBottomSheetState(
+                ModalBottomSheetValue.Hidden
+            ),
+        )
+    )
 
     var hasNavigate by remember { mutableStateOf(false) }
     var showDropdownMenu by remember { mutableStateOf(false) }
@@ -115,6 +134,16 @@ fun HomeScreen(
             modalBottomSheetSortOptionState.isVisible -> scope.launch {
                 modalBottomSheetSortOptionState.hide()
             }
+            musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
+                musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.collapse()
+            }
+            musicControllerState.modalBottomSheetMusicInfoState.isVisible -> scope.launch {
+                musicControllerState.modalBottomSheetMusicInfoState.hide()
+            }
+            musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
+                musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.collapse()
+            }
+            else -> (context as MainActivity).finishAffinity()
         }
     }
 
@@ -332,6 +361,7 @@ fun HomeScreen(
                         3 -> PlaylistPagerScreen(
                             homeViewModel = homeViewModel,
                             navController = navController,
+                            musicControllerViewModel = musicControllerViewModel
                         )
                     }
                 }

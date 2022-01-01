@@ -40,6 +40,10 @@ class MusicomposeRepository(private val databaseUtil: DatabaseUtil): Musicompose
         databaseUtil.getAllPlaylist(action)
     }
 
+    override fun getPlaylist(playlistID: Int, action: (Playlist) -> Unit) {
+        databaseUtil.getPlaylist(playlistID, action)
+    }
+
     override fun updatePlaylist(playlist: Playlist, action: () -> Unit) {
         databaseUtil.updatePlaylist(playlist, action)
     }

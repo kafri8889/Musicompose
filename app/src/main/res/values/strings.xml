@@ -19,5 +19,11 @@
     <string name="play_all">Play all</string>
     <string name="favorite">Favorite</string>
     <string name="just_played">Just played</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="my_playlist">My playlist</string>
+    <string name="enter_playlist_name">Enter playlist name</string>
+    <string name="playlist_name_cannot_be_empty">Playlist name cannot be empty</string>
+    <string name="delete">Delete</string>
+    <string name="ok">OK</string>
 
 </resources>

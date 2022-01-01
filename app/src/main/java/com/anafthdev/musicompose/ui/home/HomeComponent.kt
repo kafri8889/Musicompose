@@ -30,6 +30,7 @@ import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.theme.sunset_orange
 import com.anafthdev.musicompose.ui.theme.typographyDmSans
 import com.anafthdev.musicompose.ui.theme.typographySkModernist
+import com.anafthdev.musicompose.ui.theme.white
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.draggedItem
@@ -145,7 +146,7 @@ private fun MusicItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographyDmSans().body1.copy(
-                        color = if (isMusicPlayed) sunset_orange else typographyDmSans().body1.color,
+                        color = if (isMusicPlayed) sunset_orange else white,
                         fontSize = TextUnit(14f, TextUnitType.Sp),
                         fontWeight = FontWeight.SemiBold
                     )
@@ -156,7 +157,7 @@ private fun MusicItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typographySkModernist().body1.copy(
-                        color = if (isMusicPlayed) sunset_orange else typographySkModernist().body1.color.copy(alpha = 0.7f),
+                        color = if (isMusicPlayed) sunset_orange else white.copy(alpha = 0.7f),
                         fontSize = TextUnit(14f, TextUnitType.Sp),
                     ),
                     modifier = Modifier
