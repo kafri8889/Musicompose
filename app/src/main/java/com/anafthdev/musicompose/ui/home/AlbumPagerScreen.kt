@@ -41,17 +41,11 @@ fun AlbumPagerScreen(
                 AlbumItem(
                     musicList = musicPair.second,
                     onClick = {
-                        val route = "${
-                            MusicomposeDestination.AlbumScreen
-                        }/${
+                        val route = MusicomposeDestination.Album.createRoute(
                             albumList[albumList.keys.toList()[i]]?.get(0)?.albumID ?: Music.unknown.albumID
-                        }"
-                        navController.navigate(route) {
-                            popUpTo(MusicomposeDestination.HomeScreen) {
-                                saveState = false
-                            }
+                        )
 
-                            restoreState = false
+                        navController.navigate(route) {
                             launchSingleTop = true
                         }
                     }

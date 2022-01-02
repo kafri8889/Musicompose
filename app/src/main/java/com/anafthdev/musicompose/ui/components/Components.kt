@@ -1,5 +1,9 @@
 package com.anafthdev.musicompose.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -11,6 +15,7 @@ import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -125,10 +130,10 @@ fun MusicItem(
     modifier: Modifier = Modifier,
     showImage: Boolean = true,
     showDuration: Boolean = true,
+    showTrailingIcon: Boolean = false,
+    trailingIcon: @Composable ColumnScope.() -> Unit = {},
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Card(
         elevation = 0.dp,
         backgroundColor = if (isSystemInDarkTheme()) background_dark else background_light,
@@ -159,12 +164,14 @@ fun MusicItem(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(12.dp))
+                        .weight(0.14f, fill = false)
                 )
             }
 
             Column(
                 modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp)
+                    .padding(start = 8.dp, end = 12.dp)
+                    .weight(0.6f)
             ) {
                 Text(
                     text = music.title,
@@ -217,6 +224,17 @@ fun MusicItem(
                         )
                     }
                 }
+            }
+
+            if (showTrailingIcon) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    content = trailingIcon,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .weight(0.1f, fill = false)
+                )
             }
 
         }
@@ -435,62 +453,79 @@ fun PlayAllSongButton(
     musicList: List<Music>,
     musicControllerViewModel: MusicControllerViewModel
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                indication = rememberRipple(color = Color.Transparent),
-                interactionSource = MutableInteractionSource(),
-                onClick = {
-                    musicControllerViewModel.playAll(musicList)
-                }
-            )
-            .padding(bottom = 16.dp, top = 8.dp, start = 8.dp)
+    AnimatedVisibility(
+        visible = musicList.isNotEmpty(),
+        enter = slideInVertically(
+            animationSpec = tween(800),
+            initialOffsetY = { fullHeight -> -fullHeight }
+        ),
+        exit = slideOutVertically(
+            animationSpec = tween(800),
+            targetOffsetY = { fullHeight -> -fullHeight }
+        ),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(100))
-                .background(sunset_orange)
+                .fillMaxWidth()
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_play_filled_rounded),
-                tint = white,
-                contentDescription = null,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .size(14.dp)
-                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .clickable(
+                        indication = rememberRipple(color = Color.Transparent),
+                        interactionSource = MutableInteractionSource(),
+                        onClick = {
+                            musicControllerViewModel.playAll(musicList)
+                        }
+                    )
+                    .padding(bottom = 16.dp, top = 8.dp, start = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(100))
+                        .background(sunset_orange)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_play_filled_rounded),
+                        tint = white,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+
+                Text(
+                    text = stringResource(id = R.string.play_all),
+                    style = typographyDmSans().body1.copy(
+                        fontSize = TextUnit(14f, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                )
+
+                Text(
+                    text = "${musicList.size} ${stringResource(id = R.string.song).lowercase()}",
+                    style = typographyDmSans().body1.copy(
+                        color = typographyDmSans().body1.color.copy(alpha = 0.6f),
+                        fontSize = TextUnit(14f, TextUnitType.Sp),
+                        fontWeight = FontWeight.Light
+                    ),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Divider(
+                color = background_content_dark,
+                thickness = 1.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
             )
         }
-
-        Text(
-            text = stringResource(id = R.string.play_all),
-            style = typographyDmSans().body1.copy(
-                fontSize = TextUnit(14f, TextUnitType.Sp),
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier
-                .padding(start = 8.dp)
-        )
-
-        Text(
-            text = "${musicList.size} ${stringResource(id = R.string.song).lowercase()}",
-            style = typographyDmSans().body1.copy(
-                color = typographyDmSans().body1.color.copy(alpha = 0.6f),
-                fontSize = TextUnit(14f, TextUnitType.Sp),
-                fontWeight = FontWeight.Light
-            ),
-            modifier = Modifier
-                .padding(start = 8.dp)
-        )
     }
-
-    Divider(
-        color = background_content_dark,
-        thickness = 1.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-    )
 }

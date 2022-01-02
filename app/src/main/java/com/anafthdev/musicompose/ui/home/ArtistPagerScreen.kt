@@ -62,17 +62,8 @@ fun ArtistPagerScreen(
 
                 IconButton(
                     onClick = {
-                        val route = "${
-                            MusicomposeDestination.ArtistScreen
-                        }/${
-                            musicPair.second[0].artist
-                        }"
+                        val route = MusicomposeDestination.Artist.createRoute(musicPair.second[0].artist)
                         navController.navigate(route) {
-                            popUpTo(MusicomposeDestination.HomeScreen) {
-                                saveState = false
-                            }
-
-                            restoreState = false
                             launchSingleTop = true
                         }
                     }

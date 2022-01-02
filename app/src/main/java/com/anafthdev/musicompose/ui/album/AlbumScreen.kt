@@ -2,8 +2,6 @@ package com.anafthdev.musicompose.ui.album
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,28 +10,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.MusicItem
@@ -69,9 +59,7 @@ fun AlbumScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            navController.navigate(MusicomposeDestination.HomeScreen) {
-                                popUpTo(0)
-                            }
+                            navController.popBackStack()
                         },
                     ) {
                         Icon(

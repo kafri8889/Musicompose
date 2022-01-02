@@ -1,6 +1,5 @@
 package com.anafthdev.musicompose.ui.home
 
-import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
@@ -143,6 +142,9 @@ fun HomeScreen(
             musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
                 musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.collapse()
             }
+            pagerState.currentPage != 0 -> scope.launch {
+                pagerState.animateScrollToPage(0)
+            }
             else -> (context as MainActivity).finishAffinity()
         }
     }
@@ -234,12 +236,7 @@ fun HomeScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                navController.navigate(MusicomposeDestination.SearchScreen) {
-                                    popUpTo(MusicomposeDestination.HomeScreen) {
-                                        saveState = false
-                                    }
-
-                                    restoreState = false
+                                navController.navigate(MusicomposeDestination.Search.route) {
                                     launchSingleTop = true
                                 }
                             },
@@ -271,12 +268,7 @@ fun HomeScreen(
                                 onItemClicked = { i ->
                                     when (i) {
                                         0 -> {
-                                            navController.navigate(MusicomposeDestination.ScanMusicScreen) {
-                                                popUpTo(MusicomposeDestination.HomeScreen) {
-                                                    saveState = false
-                                                }
-
-                                                restoreState = false
+                                            navController.navigate(MusicomposeDestination.ScanMusic.route) {
                                                 launchSingleTop = true
                                             }
                                         }

@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import timber.log.Timber
 import java.util.*
 import kotlin.collections.ArrayList
@@ -21,6 +22,22 @@ class SearchViewModel(
 
     private val _filteredAlbum = MutableLiveData<List<Music>>()
     val filteredAlbum: LiveData<List<Music>> = _filteredAlbum
+
+    private val _playlist = MutableLiveData(Playlist.unknown)
+    val playlist: LiveData<Playlist> = _playlist
+
+    fun getPlaylist(playlistID: Int, action: () -> Unit = {}) {
+        repository.getPlaylist(playlistID) { mPlaylist ->
+            _playlist.value = mPlaylist
+            action()
+        }
+    }
+
+    fun updatePlaylist(playlist: Playlist) {
+        repository.updatePlaylist(playlist) {
+            _playlist.value = playlist
+        }
+    }
 
     fun filter(s: String) {
         repository.getAllMusic { musicList ->

@@ -11,6 +11,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
@@ -34,6 +37,7 @@ import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.AlbumItem
 import com.anafthdev.musicompose.ui.components.MusicItem
@@ -46,7 +50,8 @@ import com.anafthdev.musicompose.ui.theme.*
     ExperimentalFoundationApi::class
 )
 @Composable
-fun SearchScreen(
+fun SearchSongScreen(
+    playlistID: Int,
     navController: NavHostController,
     searchViewModel: SearchViewModel,
     musicControllerViewModel: MusicControllerViewModel
@@ -54,18 +59,19 @@ fun SearchScreen(
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
+    val playlist by searchViewModel.playlist.observeAsState(initial = Playlist.unknown)
     val filteredMusic by searchViewModel.filteredMusic.observeAsState(initial = emptyList())
-    val filteredArtist by searchViewModel.filteredArtist.observeAsState(initial = emptyList())
-    val filteredAlbum by searchViewModel.filteredAlbum.observeAsState(initial = emptyList())
+    val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
 
     var query by remember { mutableStateOf("") }
     var hasNavigate by remember { mutableStateOf(false) }
+    val musicListInPlaylist = remember { mutableStateListOf<Music>() }
     val searchTextFieldFocusRequester = remember { FocusRequester() }
 
-    val albumList = filteredAlbum.groupBy { it.album }
-
     if (!hasNavigate) {
+        searchViewModel.getPlaylist(playlistID) {
+            musicListInPlaylist.addAll(playlist.musicList)
+        }
         LaunchedEffect(Unit) {
             searchTextFieldFocusRequester.requestFocus()
         }
@@ -73,7 +79,7 @@ fun SearchScreen(
     }
 
     searchViewModel.filter(query)
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -222,157 +228,31 @@ fun SearchScreen(
                         isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                         showImage = false,
                         showDuration = false,
+                        showTrailingIcon = true,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    if (musicListInPlaylist.contains(music)) musicListInPlaylist.remove(music)
+                                    else musicListInPlaylist.add(music)
+
+                                    searchViewModel.updatePlaylist(playlist.apply { musicList = musicListInPlaylist })
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (musicListInPlaylist.contains(music)) Icons.Rounded.Check else Icons.Rounded.Add,
+                                    tint = if (isSystemInDarkTheme()) background_light else background_dark,
+                                    contentDescription = null
+                                )
+                            }
+                        },
                         onClick = {
-                            musicControllerViewModel.play(music.audioID)
+                            if (musicListInPlaylist.contains(music)) musicListInPlaylist.remove(music)
+                            else musicListInPlaylist.add(music)
+
+                            searchViewModel.updatePlaylist(playlist.apply { musicList = musicListInPlaylist })
                         },
                         modifier = Modifier
                             .padding(vertical = 4.dp)
-                    )
-                }
-
-                item {
-                    if (filteredArtist.isNotEmpty()) {
-
-                        if (filteredMusic.isNotEmpty()) {
-                            Divider(
-                                color = background_content_dark,
-                                thickness = 1.4.dp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 24.dp)
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.artist),
-                                style = typographyDmSans().body1.copy(
-                                    fontSize = TextUnit(16f, TextUnitType.Sp),
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                                    .padding(start = 14.dp, top = 16.dp, bottom = 8.dp)
-                            )
-
-                            Text(
-                                text = "(${filteredArtist.size})",
-                                style = typographyDmSans().body1.copy(
-                                    color = typographyDmSans().body1.color.copy(alpha = 0.6f),
-                                    fontSize = TextUnit(14f, TextUnitType.Sp),
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .padding(end = 14.dp, top = 16.dp, bottom = 16.dp)
-                            )
-                        }
-                    }
-                }
-
-                items(filteredArtist) { music ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, top = 16.dp, bottom = 16.dp)
-                    ) {
-                        Text(
-                            text = music.artist,
-                            style = typographySkModernist().body1.copy(
-                                fontSize = TextUnit(16f, TextUnitType.Sp),
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                        )
-
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                        )
-
-                        IconButton(
-                            onClick = {
-                                val route = MusicomposeDestination.Artist.createRoute(music.artist)
-                                navController.navigate(route) {
-                                    launchSingleTop = true
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardArrowRight,
-                                tint = background_content_dark,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    if (albumList.isNotEmpty()) {
-
-                        if (filteredMusic.isNotEmpty() and filteredArtist.isNotEmpty()) {
-                            Divider(
-                                color = background_content_dark,
-                                thickness = 1.4.dp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 24.dp)
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.album),
-                                style = typographyDmSans().body1.copy(
-                                    fontSize = TextUnit(16f, TextUnitType.Sp),
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                                    .padding(start = 14.dp, top = 16.dp, bottom = 8.dp)
-                            )
-
-                            Text(
-                                text = "(${albumList.size})",
-                                style = typographyDmSans().body1.copy(
-                                    color = typographyDmSans().body1.color.copy(alpha = 0.6f),
-                                    fontSize = TextUnit(14f, TextUnitType.Sp),
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .padding(end = 14.dp, top = 16.dp, bottom = 16.dp)
-                            )
-                        }
-                    }
-                }
-
-                items(albumList.size) { i ->
-                    AlbumItem(
-                        musicList = albumList[albumList.keys.toList()[i]]!!,
-                        onClick = {
-                            val route = MusicomposeDestination.Album.createRoute(
-                                albumList[albumList.keys.toList()[i]]?.get(0)?.albumID ?: Music.unknown.albumID
-                            )
-
-                            navController.navigate(route) {
-                                launchSingleTop = true
-                            }
-                        }
-                    )
-                }
-
-                item {
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(32.dp)
                     )
                 }
 

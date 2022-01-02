@@ -1,6 +1,13 @@
 package com.anafthdev.musicompose.utils
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Rect
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import androidx.activity.ComponentActivity
@@ -9,40 +16,43 @@ import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.palette.graphics.Palette
+import com.anafthdev.musicompose.R
+import com.anafthdev.musicompose.ui.theme.primary_light
+import timber.log.Timber
+import java.io.FileNotFoundException
 
 object ComposeUtils {
 
-    enum class Keyboard {
-        Opened, Closed
-    }
-
+    @SuppressWarnings("ComposableNaming")
     @Composable
-    fun keyboardAsState(): State<Keyboard> {
-        val keyboardState = remember { mutableStateOf(Keyboard.Closed) }
-        val view = LocalView.current
-        DisposableEffect(view) {
-            val onGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {
-                val rect = Rect()
-                view.getWindowVisibleDisplayFrame(rect)
-                val screenHeight = view.rootView.height
-                val keypadHeight = screenHeight - rect.bottom
-                keyboardState.value = if (keypadHeight > screenHeight * 0.15) {
-                    Keyboard.Opened
-                } else {
-                    Keyboard.Closed
+    fun getDominantColor(context: Context, uri: Uri, onGenerated: (Palette) -> Unit) {
+        Palette.Builder(
+            run {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        ImageDecoder.decodeBitmap(
+                            ImageDecoder.createSource(
+                                context.contentResolver,
+                                uri
+                            )
+                        ).copy(Bitmap.Config.RGBA_F16, true)
+                    } else MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } catch (e: FileNotFoundException) {
+                    Timber.e(e)
+                    return@run ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!.toBitmap()
                 }
             }
-            view.viewTreeObserver.addOnGlobalLayoutListener(onGlobalListener)
-
-            onDispose {
-                view.viewTreeObserver.removeOnGlobalLayoutListener(onGlobalListener)
-            }
-        }
-
-        return keyboardState
+        ).generate { it?.let { palette ->
+            onGenerated(palette)
+        } }
     }
 
     /**

@@ -25,5 +25,6 @@
     <string name="playlist_name_cannot_be_empty">Playlist name cannot be empty</string>
     <string name="delete">Delete</string>
     <string name="ok">OK</string>
+    <string name="add_song">Add song</string>
 
 </resources>

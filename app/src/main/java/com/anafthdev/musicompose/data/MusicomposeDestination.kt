@@ -2,35 +2,41 @@ package com.anafthdev.musicompose.data
 
 object MusicomposeDestination {
 
-    const val HomeScreen = "Home"
+    private const val HomeScreen = "Home"
 
-    const val ScanMusicScreen = "ScanMusic"
+    private const val ScanMusicScreen = "ScanMusic"
 
-    const val SearchScreen = "Search"
+    private const val SearchScreen = "Search"
 
-    const val ArtistScreen = "Artist"
+    private const val SearchSongScreen = "SearchSong"
 
-    const val AlbumScreen = "Album"
+    private const val ArtistScreen = "Artist"
 
-    const val PlaylistScreen = "Playlist"
+    private const val AlbumScreen = "Album"
 
-    sealed class Screen(val route: String) {
-        object Home: Screen(HomeScreen)
+    private const val PlaylistScreen = "Playlist"
 
-        object ScanMusic: Screen(ScanMusicScreen)
+    sealed class Screen(val route: String)
 
-        object Search: Screen(SearchScreen)
+    object Home: Screen(HomeScreen)
 
-        object Artist: Screen("${ArtistScreen}/{artistName}") {
-            fun createRoute(artistName: String) = "${ArtistScreen}/$artistName"
-        }
+    object ScanMusic: Screen(ScanMusicScreen)
 
-        object Album: Screen("${AlbumScreen}/{albumID}") {
-            fun createRoute(albumID: String) = "${AlbumScreen}/$albumID"
-        }
+    object Search: Screen(SearchScreen)
 
-        object Playlist: Screen("$PlaylistScreen}/{playlistID}") {
-            fun createRoute(playlistID: Int) = "$PlaylistScreen}/$playlistID"
-        }
+    object SearchSong: Screen("$SearchSongScreen}/{playlistID}") {
+        fun createRoute(playlistID: Int) = "$SearchSongScreen}/$playlistID"
+    }
+
+    object Artist: Screen("${ArtistScreen}/{artistName}") {
+        fun createRoute(artistName: String) = "${ArtistScreen}/$artistName"
+    }
+
+    object Album: Screen("${AlbumScreen}/{albumID}") {
+        fun createRoute(albumID: String) = "${AlbumScreen}/$albumID"
+    }
+
+    object Playlist: Screen("$PlaylistScreen}/{playlistID}") {
+        fun createRoute(playlistID: Int) = "$PlaylistScreen}/$playlistID"
     }
 }

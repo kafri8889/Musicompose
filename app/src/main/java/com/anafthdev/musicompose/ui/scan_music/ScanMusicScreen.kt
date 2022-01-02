@@ -99,15 +99,8 @@ fun ScanMusicScreen(
             onClick = {
                scanMusicViewModel.scanLocalSong(context) {
                    Handler(Looper.getMainLooper()).postDelayed({
-                       navController.navigate(MusicomposeDestination.HomeScreen) {
-                           popUpTo(0) {
-                               saveState = false
-                           }
-
-                           restoreState = false
-                           launchSingleTop = true
-                       }
-                   }, 1300)
+                       navController.popBackStack()
+                   }, 1000)
                }
             },
             modifier = Modifier

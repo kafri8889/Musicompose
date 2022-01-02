@@ -2,7 +2,9 @@ package com.anafthdev.musicompose.ui.playlist
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -77,11 +79,7 @@ fun PlaylistScreen(
             deletePlaylistBottomSheetState.isVisible -> scope.launch {
                 deletePlaylistBottomSheetState.hide()
             }
-            else -> {
-                navController.navigate(MusicomposeDestination.HomeScreen) {
-                    popUpTo(0)
-                }
-            }
+            else -> navController.popBackStack()
         }
     }
 
@@ -106,9 +104,9 @@ fun PlaylistScreen(
             TransparentButton(
                 shape = RoundedCornerShape(0),
                 onClick = {
-                    navController.navigate(MusicomposeDestination.HomeScreen) {
-                        popUpTo(0)
-                    }.also { musicControllerViewModel.deletePlaylist(playlist) }
+                    navController.popBackStack().also {
+                        musicControllerViewModel.deletePlaylist(playlist)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,7 +165,8 @@ fun PlaylistScreen(
 
 @OptIn(
     ExperimentalUnitApi::class,
-    ExperimentalMaterialApi::class
+    ExperimentalMaterialApi::class,
+    ExperimentalFoundationApi::class
 )
 @Composable
 private fun ScreenContent(
@@ -192,12 +191,7 @@ private fun ScreenContent(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            navController.navigate(MusicomposeDestination.HomeScreen) {
-                                popUpTo(0)
-
-                                restoreState = false
-                                launchSingleTop = true
-                            }
+                            navController.popBackStack()
                         }
                     ) {
                         Icon(
@@ -206,7 +200,7 @@ private fun ScreenContent(
                             contentDescription = null
                         )
                     }
-                }
+                },
             )
         }
     ) {
@@ -371,29 +365,71 @@ private fun ScreenContent(
 
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
+            CompositionLocalProvider(
+                LocalOverScrollConfiguration provides null
             ) {
-                item {
-                    PlayAllSongButton(
-                        musicList = playlist.musicList,
-                        musicControllerViewModel = musicControllerViewModel
-                    )
-                }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 64.dp, top = 8.dp)
+                ) {
+                    item {
+                        PlayAllSongButton(
+                            musicList = playlist.musicList,
+                            musicControllerViewModel = musicControllerViewModel
+                        )
+                    }
 
-                items(playlist.musicList) { music ->
-                    MusicItem(
-                        music = music,
-                        isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
-                        onClick = {
-                            musicControllerViewModel.play(music.audioID)
-                            musicControllerViewModel.getPlaylist()
+                    items(playlist.musicList) { music ->
+                        MusicItem(
+                            music = music,
+                            isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
+                            onClick = {
+                                musicControllerViewModel.play(music.audioID)
+                                musicControllerViewModel.getPlaylist()
+                            }
+                        )
+                    }
+
+                    item {
+                        Button(
+                            contentPadding = PaddingValues(0.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = ButtonDefaults.elevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp,
+                                hoveredElevation = 0.dp,
+                                focusedElevation = 0.dp
+                            ),
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = sunset_orange.copy(alpha = 0.4f),
+                                contentColor = Color.Transparent
+                            ),
+                            onClick = {
+                                val route = MusicomposeDestination.SearchSong.createRoute(playlist.id ?: Playlist.unknown.id)
+                                navController.navigate(route) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp, horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.add_song),
+                                style = typographySkModernist().body1.copy(
+                                    color = sunset_orange,
+                                    fontSize = TextUnit(16f, TextUnitType.Sp),
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier
+                                    .padding(vertical = 12.dp)
+                            )
                         }
-                    )
+                    }
                 }
             }
+
         }
     }  // Scaffold ~
 }

@@ -23,6 +23,7 @@ import com.anafthdev.musicompose.ui.playlist.PlaylistViewModel
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicScreen
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
 import com.anafthdev.musicompose.ui.search.SearchScreen
+import com.anafthdev.musicompose.ui.search.SearchSongScreen
 import com.anafthdev.musicompose.ui.search.SearchViewModel
 
 @Composable
@@ -40,13 +41,13 @@ fun MusicomposeNavigation(
 ) {
     NavHost(
         navController = navigationController,
-        startDestination = MusicomposeDestination.HomeScreen,
+        startDestination = MusicomposeDestination.Home.route,
         modifier = Modifier
             .fillMaxSize()
             .then(modifier)
     ) {
 
-        composable(MusicomposeDestination.Screen.Home.route) {
+        composable(MusicomposeDestination.Home.route) {
             HomeScreen(
                 navController = navigationController,
                 musicControllerViewModel = musicControllerViewModel,
@@ -55,7 +56,7 @@ fun MusicomposeNavigation(
             )
         }
 
-        composable(MusicomposeDestination.Screen.ScanMusic.route) {
+        composable(MusicomposeDestination.ScanMusic.route) {
             ScanMusicScreen(
                 navController = navigationController,
                 scanMusicViewModel = scanMusicViewModel,
@@ -63,7 +64,7 @@ fun MusicomposeNavigation(
             )
         }
 
-        composable(MusicomposeDestination.Screen.Search.route) {
+        composable(MusicomposeDestination.Search.route) {
             SearchScreen(
                 navController = navigationController,
                 searchViewModel = searchViewModel,
@@ -72,7 +73,24 @@ fun MusicomposeNavigation(
         }
 
         composable(
-            route = MusicomposeDestination.Screen.Artist.route,
+            route = MusicomposeDestination.SearchSong.route,
+            arguments = listOf(
+                navArgument("playlistID") {
+                    type = NavType.IntType
+                }
+            )
+        ) { entry ->
+            val playlistID = entry.arguments?.getInt("playlistID") ?: Playlist.unknown.id
+            SearchSongScreen(
+                playlistID = playlistID,
+                navController = navigationController,
+                searchViewModel = searchViewModel,
+                musicControllerViewModel = musicControllerViewModel
+            )
+        }
+
+        composable(
+            route = MusicomposeDestination.Artist.route,
             arguments = listOf(
                 navArgument("artistName") {
                     type = NavType.StringType
@@ -89,7 +107,7 @@ fun MusicomposeNavigation(
         }
 
         composable(
-            route = MusicomposeDestination.Screen.Album.route,
+            route = MusicomposeDestination.Album.route,
             arguments = listOf(
                 navArgument("albumID") {
                     type = NavType.StringType
@@ -106,7 +124,7 @@ fun MusicomposeNavigation(
         }
 
         composable(
-            route = MusicomposeDestination.Screen.Playlist.route,
+            route = MusicomposeDestination.Playlist.route,
             arguments = listOf(
                 navArgument("playlistID") {
                     type = NavType.IntType

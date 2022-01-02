@@ -6,10 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.media.AudioManager
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -65,10 +62,6 @@ import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
 import com.anafthdev.musicompose.ui.search.SearchViewModel
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.ComposeUtils
-import com.anafthdev.musicompose.utils.ComposeUtils.currentFraction
-import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.imePadding
-import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.systemBarsPadding
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
@@ -77,7 +70,6 @@ import timber.log.Timber
 import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
 
-@SuppressWarnings("deprecation")
 @SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -154,25 +146,13 @@ fun MusicomposeApp(
         true.also { hasNavigate = it }
     }
 
-    Palette.Builder(
-        run {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(
-                        ImageDecoder.createSource(
-                            context.contentResolver,
-                            currentMusicPlayed.albumPath.toUri()
-                        )
-                    ).copy(Bitmap.Config.RGBA_F16, true)
-                } else MediaStore.Images.Media.getBitmap(context.contentResolver, currentMusicPlayed.albumPath.toUri())
-            } catch (e: FileNotFoundException) {
-                Timber.e(e)
-                return@run ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!.toBitmap()
-            }
+    ComposeUtils.getDominantColor(
+        context = context,
+        uri = currentMusicPlayed.albumPath.toUri(),
+        onGenerated = { palette ->
+            dominantBackgroundColor = Color(palette.getDominantColor(primary_light.toArgb()))
         }
-    ).generate { it?.let { palette ->
-        dominantBackgroundColor = Color(palette.getDominantColor(primary_light.toArgb()))
-    } }
+    )
 
     musicControllerViewModel.setMusicFavorite(isMusicFavorite)
 
@@ -230,15 +210,10 @@ fun MusicomposeApp(
                                                 when (pair.first) {
                                                     bsMusicInfoItem[0].first -> {
                                                         val route =
-                                                            MusicomposeDestination.Screen.Artist.createRoute(
+                                                            MusicomposeDestination.Artist.createRoute(
                                                                 currentMusicPlayed.artist
                                                             )
                                                         navigationController.navigate(route) {
-                                                            popUpTo(MusicomposeDestination.HomeScreen) {
-                                                                saveState = false
-                                                            }
-
-                                                            restoreState = false
                                                             launchSingleTop = true
                                                         }
 
@@ -250,15 +225,10 @@ fun MusicomposeApp(
                                                     }
                                                     bsMusicInfoItem[1].first -> {
                                                         val route =
-                                                            MusicomposeDestination.Screen.Album.createRoute(
+                                                            MusicomposeDestination.Album.createRoute(
                                                                 currentMusicPlayed.albumID
                                                             )
                                                         navigationController.navigate(route) {
-                                                            popUpTo(MusicomposeDestination.HomeScreen) {
-                                                                saveState = false
-                                                            }
-
-                                                            restoreState = false
                                                             launchSingleTop = true
                                                         }
 
@@ -333,12 +303,16 @@ fun MusicomposeApp(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .alpha(1f - musicControllerState.playlistScaffoldBottomSheetState.currentFraction)
-                                        .height(64.dp)
+                                        .alpha(
+                                            if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.targetValue == BottomSheetValue.Expanded) 0f else 1f
+                                        )
+                                        .height(
+                                            if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.targetValue == BottomSheetValue.Expanded) 0.dp else 64.dp
+                                        )
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .padding(top = 10.dp, bottom = 8.dp)
+                                            .padding(top = 10.dp, bottom = 16.dp)
                                             .size(32.dp, 2.dp)
                                             .clip(RoundedCornerShape(100))
                                             .background(white.copy(alpha = 0.2f))
@@ -365,7 +339,12 @@ fun MusicomposeApp(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 16.dp)
-                                    .alpha(musicControllerState.playlistScaffoldBottomSheetState.currentFraction)
+                                    .alpha(
+                                        if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.targetValue == BottomSheetValue.Collapsed) 0f else 1f
+                                    )
+                                    .height(
+                                        if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.targetValue == BottomSheetValue.Expanded) 64.dp else 0.dp
+                                    )
                             ) {
 
                                 Row(
@@ -850,11 +829,11 @@ fun MusicomposeApp(
             AnimatedVisibility(
                 visible = !isMiniMusicPlayerHidden,
                 enter = slideInVertically(
-                    animationSpec = tween(1000),
+                    animationSpec = tween(800),
                     initialOffsetY = { fullHeight -> fullHeight }
                 ),
                 exit = slideOutVertically(
-                    animationSpec = tween(1000),
+                    animationSpec = tween(800),
                     targetOffsetY = { fullHeight -> fullHeight }
                 ),
                 modifier = Modifier

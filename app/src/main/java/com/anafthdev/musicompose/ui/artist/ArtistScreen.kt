@@ -76,9 +76,7 @@ fun ArtistScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            navController.navigate(MusicomposeDestination.HomeScreen) {
-                                popUpTo(0)
-                            }
+                            navController.popBackStack()
                         },
                     ) {
                         Icon(

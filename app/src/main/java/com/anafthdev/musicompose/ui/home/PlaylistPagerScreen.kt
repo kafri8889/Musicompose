@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -24,7 +23,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -45,7 +43,6 @@ import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.PlaylistItem
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils.toast
-import com.google.accompanist.insets.*
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -77,9 +74,7 @@ fun PlaylistPagerScreen(
             newPlaylistModalBottomSheetState.isVisible -> scope.launch {
                 newPlaylistModalBottomSheetState.hide()
             }
-            else -> navController.navigate(MusicomposeDestination.HomeScreen) {
-                popUpTo(0)
-            }
+            else -> navController.popBackStack()
         }
     }
 
@@ -233,13 +228,8 @@ fun PlaylistPagerScreen(
                     PlaylistItem(
                         playlist = playlist,
                         onClick = {
-                            val route = MusicomposeDestination.Screen.Playlist.createRoute(playlist.id)
+                            val route = MusicomposeDestination.Playlist.createRoute(playlist.id)
                             navController.navigate(route) {
-                                popUpTo(MusicomposeDestination.HomeScreen) {
-                                    saveState = false
-                                }
-
-                                restoreState = false
                                 launchSingleTop = true
                             }
                         }
