@@ -12,9 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -35,11 +33,9 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.data.MusicomposeDestination
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
-import com.anafthdev.musicompose.ui.components.AlbumItem
 import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.TransparentButton
 import com.anafthdev.musicompose.ui.theme.*

@@ -1,6 +1,5 @@
 package com.anafthdev.musicompose.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 
 val white = Color(0xFFFFFFFF)

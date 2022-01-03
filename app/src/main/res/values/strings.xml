@@ -20,10 +20,12 @@
     <string name="favorite">Favorite</string>
     <string name="just_played">Just played</string>
     <string name="new_playlist">New playlist</string>
+    <string name="rename_playlist">Rename playlist</string>
     <string name="my_playlist">My playlist</string>
     <string name="enter_playlist_name">Enter playlist name</string>
     <string name="playlist_name_cannot_be_empty">Playlist name cannot be empty</string>
     <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
     <string name="ok">OK</string>
     <string name="add_song">Add song</string>
 

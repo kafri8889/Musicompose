@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.common.MusicManager
+import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 
 class ScanMusicViewModel(
     private val repository: MusicomposeRepositoryImpl

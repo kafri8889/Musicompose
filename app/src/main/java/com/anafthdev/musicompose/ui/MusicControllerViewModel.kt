@@ -4,9 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
@@ -22,7 +23,6 @@ import org.burnoutcrew.reorderable.move
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.collections.ArrayList
 
 @SuppressLint("StaticFieldLeak")
 class MusicControllerViewModel @Inject constructor(
@@ -202,16 +202,33 @@ class MusicControllerViewModel @Inject constructor(
      * @param isPlayLastMusic if true, the music will be paused
      */
     fun play(audioID: Long, isPlayLastMusic: Boolean = false) {
-        repository.getMusic(audioID) { music ->
-            appDatastore.setLastMusicPlayed(music.audioID) {
-                _currentMusicPlayed.value = music
-                _isMusicPlayed.value = true
-                _isMusicFavorite.value = music.isFavorite
-                _musicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(_currentMusicPlayed.value!!.duration).toInt()
-                _musicDurationInSecond.value = TimeUnit.MILLISECONDS.toSeconds(_currentMusicPlayed.value!!.duration).toInt() % 60
+        repository.getPlaylist(Playlist.justPlayed.id) { justPlayedPlaylist ->
+            repository.getMusic(audioID) { music ->
+                val mJustPlayedPlaylist = ArrayList(justPlayedPlaylist.musicList).apply {
+                    if (!isPlayLastMusic) {
+                        if (size > 9) {
+                            removeAt(0)
+                            add(music)
+                        } else add(music)
+                    }
+                }
 
-                if (isPlayLastMusic) pause()
-                else resume()
+                repository.updatePlaylist(
+                    playlist = justPlayedPlaylist.apply { musicList = mJustPlayedPlaylist },
+                    action = {
+                        appDatastore.setLastMusicPlayed(music.audioID) {
+                            _currentMusicPlayed.value = music
+                            _isMusicPlayed.value = true
+                            _isMusicFavorite.value = music.isFavorite
+                            _musicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(_currentMusicPlayed.value!!.duration).toInt()
+                            _musicDurationInSecond.value = TimeUnit.MILLISECONDS.toSeconds(_currentMusicPlayed.value!!.duration).toInt() % 60
+
+                            if (isPlayLastMusic) pause()
+                            else resume()
+                        }
+                    }
+                )
+
             }
         }
     }
@@ -279,8 +296,23 @@ class MusicControllerViewModel @Inject constructor(
         repository.insertPlaylist(playlist, action)
     }
 
+    fun updatePlaylist(playlist: Playlist, action: () -> Unit = {}) {
+        repository.updatePlaylist(playlist, action)
+    }
+
     fun deletePlaylist(playlist: Playlist, action: () -> Unit = {}) {
         repository.deletePlaylist(playlist, action)
+    }
+
+    fun deleteMusicFromPlaylist(music: Music, playlist: Playlist, action: () -> Unit = {}) {
+        repository.updatePlaylist(
+            playlist = playlist.apply {
+                musicList = ArrayList(musicList).apply {
+                    remove(music)
+                }
+            },
+            action = action
+        )
     }
 
     data class MusicControllerState @OptIn(ExperimentalMaterialApi::class) constructor(

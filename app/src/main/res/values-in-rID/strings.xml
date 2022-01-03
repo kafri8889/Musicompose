@@ -19,10 +19,12 @@
     <string name="favorite">Favorit</string>
     <string name="just_played">Baru diputar</string>
     <string name="new_playlist">Playlist baru</string>
+    <string name="rename_playlist">Ganti nama daftar putar</string>
     <string name="my_playlist">Daftar putar saya</string>
-    <string name="enter_playlist_name">Masukkan nama playlist</string>
+    <string name="enter_playlist_name">Masukkan nama daftar putar</string>
     <string name="playlist_name_cannot_be_empty">Nama daftar putar tidak boleh kosong</string>
     <string name="delete">Hapus</string>
+    <string name="edit">Edit</string>
     <string name="ok">Oke</string>
     <string name="add_song">Tambahkan lagu</string>
 

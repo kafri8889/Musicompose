@@ -12,16 +12,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,15 +44,14 @@ import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.MusicItem
 import com.anafthdev.musicompose.ui.components.PlayAllSongButton
-import com.anafthdev.musicompose.ui.components.TransparentButton
 import com.anafthdev.musicompose.ui.theme.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @OptIn(
     ExperimentalUnitApi::class,
-    ExperimentalMaterialApi::class
+    ExperimentalMaterialApi::class,
+    ExperimentalComposeUiApi::class
 )
 @Composable
 fun PlaylistScreen(
@@ -59,10 +61,17 @@ fun PlaylistScreen(
     musicControllerViewModel: MusicControllerViewModel
 ) {
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val scope = rememberCoroutineScope()
-    val deletePlaylistBottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+    val modalBottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
     val playlist by playlistViewModel.playlist.observeAsState(initial = Playlist.unknown)
+    val selectedMusic by playlistViewModel.selectedMusic.observeAsState(initial = Music.unknown)
+    val deleteType by playlistViewModel.deleteType.observeAsState(initial = PlaylistViewModel.PlaylistScreenDeleteType.PLAYLIST)
+    val sheetStateContent by playlistViewModel.sheetStateContent.observeAsState(
+        initial = PlaylistViewModel.PlaylistScreenSheetStateContent.PlaylistMoreOptionSheetContent
+    )
 
     var hasNavigate by remember { mutableStateOf(false) }
 
@@ -71,97 +80,75 @@ fun PlaylistScreen(
         true.also { hasNavigate = it }
     }
 
-    if (deletePlaylistBottomSheetState.isVisible) musicControllerViewModel.hideMiniMusicPlayer()
-    else musicControllerViewModel.showMiniMusicPlayer()
+    if (modalBottomSheetState.isVisible) musicControllerViewModel.hideMiniMusicPlayer()
+    else {
+        keyboardController?.hide()
+        musicControllerViewModel.showMiniMusicPlayer()
+    }
 
     BackHandler {
         when {
-            deletePlaylistBottomSheetState.isVisible -> scope.launch {
-                deletePlaylistBottomSheetState.hide()
+            modalBottomSheetState.isVisible -> scope.launch {
+                modalBottomSheetState.hide()
             }
             else -> navController.popBackStack()
         }
     }
 
-    // BottomSheet delete
     ModalBottomSheetLayout(
         scrimColor = pure_black.copy(alpha = 0.6f),
-        sheetState = deletePlaylistBottomSheetState,
+        sheetState = modalBottomSheetState,
         sheetElevation = 8.dp,
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        sheetBackgroundColor = if (isSystemInDarkTheme()) background_content_dark else background_content_light,
         sheetContent = {
-            Text(
-                text = stringResource(id = R.string.delete),
-                style = typographyDmSans().body1.copy(
-                    color = typographyDmSans().body1.color.copy(alpha = 0.4f),
-                    fontSize = TextUnit(13f, TextUnitType.Sp)
-                ),
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 24.dp)
-            )
-
-            TransparentButton(
-                shape = RoundedCornerShape(0),
-                onClick = {
-                    navController.popBackStack().also {
-                        musicControllerViewModel.deletePlaylist(playlist)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(id = R.string.ok),
-                    style = typographyDmSans().body1.copy(
-                        fontSize = TextUnit(16f, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-                )
+            when (sheetStateContent) {
+                PlaylistViewModel.PlaylistScreenSheetStateContent.PlaylistMoreOptionSheetContent -> {
+                    PlaylistMoreOptionSheetContent(
+                        music = selectedMusic,
+                        scope = scope,
+                        navController = navController,
+                        playlistViewModel = playlistViewModel,
+                        modalBottomSheetState = modalBottomSheetState
+                    )
+                }
+                PlaylistViewModel.PlaylistScreenSheetStateContent.DeletePlaylistSheetContent -> {
+                    DeletePlaylistSheetContent(
+                        scope = scope,
+                        playlist = playlist,
+                        music = selectedMusic,
+                        deleteType = deleteType,
+                        navController = navController,
+                        modalBottomSheetState = modalBottomSheetState,
+                        musicControllerViewModel = musicControllerViewModel
+                    )
+                }
+                PlaylistViewModel.PlaylistScreenSheetStateContent.ChangePlaylistNameSheetContent -> {
+                    ChangePlaylistNameSheetContent(
+                        playlist = playlist,
+                        scope = scope,
+                        modalBottomSheetState = modalBottomSheetState,
+                        musicControllerViewModel = musicControllerViewModel
+                    )
+                }
             }
-
-            Divider(
-                color = background_content_dark,
-                thickness = 1.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-
-            TransparentButton(
-                shape = RoundedCornerShape(0),
-                onClick = {
-                    scope.launch {
-                        deletePlaylistBottomSheetState.hide()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(id = R.string.cancel),
-                    style = typographyDmSans().body1.copy(
-                        fontSize = TextUnit(16f, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-                )
-            }
-
         }
     ) {
         ScreenContent(
             scope = scope,
             playlist = playlist,
             navController = navController,
+            playlistViewModel = playlistViewModel,
             musicControllerViewModel = musicControllerViewModel,
-            deletePlaylistBottomSheetState = deletePlaylistBottomSheetState
+            modalBottomSheetState = modalBottomSheetState
         )
     }
 
 }
+
+
+
+
 
 @OptIn(
     ExperimentalUnitApi::class,
@@ -173,8 +160,9 @@ private fun ScreenContent(
     playlist: Playlist,
     scope: CoroutineScope,
     navController: NavHostController,
+    playlistViewModel: PlaylistViewModel,
     musicControllerViewModel: MusicControllerViewModel,
-    deletePlaylistBottomSheetState: ModalBottomSheetState
+    modalBottomSheetState: ModalBottomSheetState
 ) {
 
     val context = LocalContext.current
@@ -218,9 +206,14 @@ private fun ScreenContent(
 
                 Image(
                     painter = rememberImagePainter(
-                        data = playlist.defaultImage ?: if (playlist.musicList.isNotEmpty()) {
-                            playlist.musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
-                        } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!,
+                        data = try {
+                            playlist.defaultImage ?: if (playlist.musicList.isNotEmpty()) {
+                                playlist.musicList[musicIndexForAlbumThumbnail].albumPath.toUri()
+                            } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
+                        } catch (e: IndexOutOfBoundsException) {
+                            e.printStackTrace()
+                            musicIndexForAlbumThumbnail = 0
+                        },
                         builder = {
                             error(R.drawable.ic_music_unknown)
                             placeholder(R.drawable.ic_music_unknown)
@@ -235,8 +228,10 @@ private fun ScreenContent(
                                                 } else ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!
                                             }
                                         )
-                                    } else data(ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!)
-                                }
+                                    } else data(ContextCompat.getDrawable(context, R.drawable.ic_music_unknown)!!).also {
+                                        musicIndexForAlbumThumbnail = 0
+                                    }
+                                },
                             )
                         }
                     ),
@@ -280,7 +275,13 @@ private fun ScreenContent(
                                 backgroundColor = Color.Transparent
                             ),
                             onClick = {
+                                playlistViewModel.setSheetStateContent(
+                                    PlaylistViewModel.PlaylistScreenSheetStateContent.ChangePlaylistNameSheetContent
+                                )
 
+                                scope.launch {
+                                    modalBottomSheetState.show()
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -302,7 +303,7 @@ private fun ScreenContent(
                                 )
 
                                 Text(
-                                    text = "Edit",
+                                    text = stringResource(id = R.string.edit),
                                     textAlign = TextAlign.Start,
                                     style = typographySkModernist().body1.copy(
                                         fontSize = TextUnit(14f, TextUnitType.Sp),
@@ -322,8 +323,16 @@ private fun ScreenContent(
                                 backgroundColor = if (isSystemInDarkTheme()) white else black
                             ),
                             onClick = {
+                                playlistViewModel.setSheetStateContent(
+                                    PlaylistViewModel.PlaylistScreenSheetStateContent.DeletePlaylistSheetContent
+                                )
+
+                                playlistViewModel.setDeleteType(
+                                    PlaylistViewModel.PlaylistScreenDeleteType.PLAYLIST
+                                )
+
                                 scope.launch {
-                                    deletePlaylistBottomSheetState.show()
+                                    modalBottomSheetState.show()
                                 }
                             },
                             modifier = Modifier
@@ -347,7 +356,7 @@ private fun ScreenContent(
                                 )
 
                                 Text(
-                                    text = "Delete",
+                                    text = stringResource(id = R.string.delete),
                                     textAlign = TextAlign.Start,
                                     style = typographySkModernist().body1.copy(
                                         color = if (isSystemInDarkTheme()) black else white,
@@ -371,7 +380,7 @@ private fun ScreenContent(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 64.dp, top = 8.dp)
+                        .padding(top = 8.dp)
                 ) {
                     item {
                         PlayAllSongButton(
@@ -384,6 +393,27 @@ private fun ScreenContent(
                         MusicItem(
                             music = music,
                             isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
+                            showTrailingIcon = !playlist.isDefault,  // show more options if not default playlist
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            playlistViewModel.setSelectedMusic(music)
+                                            playlistViewModel.setSheetStateContent(
+                                                PlaylistViewModel.PlaylistScreenSheetStateContent.PlaylistMoreOptionSheetContent
+                                            )
+
+                                            modalBottomSheetState.show()
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        tint = if (isSystemInDarkTheme()) background_light else background_dark,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
                             onClick = {
                                 musicControllerViewModel.play(music.audioID)
                                 musicControllerViewModel.getPlaylist()
@@ -406,14 +436,19 @@ private fun ScreenContent(
                                 contentColor = Color.Transparent
                             ),
                             onClick = {
-                                val route = MusicomposeDestination.SearchSong.createRoute(playlist.id ?: Playlist.unknown.id)
+                                val route = MusicomposeDestination.SearchSong.createRoute(playlist.id)
                                 navController.navigate(route) {
                                     launchSingleTop = true
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp, horizontal = 8.dp)
+                                .padding(
+                                    start = 8.dp,
+                                    end = 8.dp,
+                                    top = 12.dp,
+                                    bottom = 64.dp
+                                )
                         ) {
                             Text(
                                 text = stringResource(id = R.string.add_song),

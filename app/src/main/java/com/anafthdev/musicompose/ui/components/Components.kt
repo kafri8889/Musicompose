@@ -15,7 +15,6 @@ import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -164,7 +163,7 @@ fun MusicItem(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .weight(0.14f, fill = false)
+                        .weight(0.18f, fill = false)
                 )
             }
 
@@ -233,7 +232,7 @@ fun MusicItem(
                     content = trailingIcon,
                     modifier = Modifier
                         .size(48.dp)
-                        .weight(0.1f, fill = false)
+                        .weight(0.08f, fill = false)
                 )
             }
 

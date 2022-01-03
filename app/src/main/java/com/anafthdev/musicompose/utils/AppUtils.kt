@@ -17,13 +17,15 @@ object AppUtils {
     }
 
     /**
-     * Returns a list element from given collection
+     * Checks if the specified element is contained in this collection with given [predicate].
      * @author kafri8889
      */
-    fun <T, U> Collection<T>.getBy(selector: (T) -> U): List<U> {
-        val result = ArrayList<U>()
-        for (v in this) { result.add(selector(v)) }
-        return result
+    fun <T> Collection<T>.containBy(predicate: (T) -> Boolean): Boolean {
+        this.forEach {
+            if (predicate(it)) return true
+        }
+
+        return false
     }
 
     /**
