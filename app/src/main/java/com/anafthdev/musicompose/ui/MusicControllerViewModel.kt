@@ -3,7 +3,10 @@ package com.anafthdev.musicompose.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.material.*
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -14,7 +17,12 @@ import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
+import com.anafthdev.musicompose.utils.AppUtils.containBy
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,9 +54,9 @@ class MusicControllerViewModel @Inject constructor(
     private val _musicDurationInSecond = MutableLiveData(0)
     val musicDurationInSecond: LiveData<Int> = _musicDurationInSecond
 
-    // in second
-    private val _currentProgress = MutableLiveData(0f)
-    val currentProgress: LiveData<Float> = _currentProgress
+    // in millisecond
+    private val _currentProgress = MutableLiveData(0L)
+    val currentProgress: LiveData<Long> = _currentProgress
 
     private val _currentVolume = MutableLiveData(0)
     val currentVolume: LiveData<Int> = _currentVolume
@@ -96,7 +104,35 @@ class MusicControllerViewModel @Inject constructor(
     private var lastVolumeValue = 0
     private var lastMusicPlayed = false
 
-//    private val mediaPlayer = MediaPlayer()
+    private var mediaHandler = Handler(Looper.getMainLooper())
+    private var mediaRunnable = Runnable {}
+    private val exoPlayer = ExoPlayer.Builder(application).build().apply {
+        addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                if (playbackState == ExoPlayer.STATE_ENDED) {
+                    when (_playMode.value!!) {
+                        MusicPlayMode.REPEAT_OFF -> {
+                            this@MusicControllerViewModel.next()
+                            viewModelScope.launch {
+                                delay(1000)
+                                this@MusicControllerViewModel.pause()
+                            }
+                        }
+                        MusicPlayMode.REPEAT_ON -> {
+                            this@MusicControllerViewModel.next()
+                        }
+                        MusicPlayMode.REPEAT_ONE -> {
+                            play(
+                                audioID = _playlist.value!![currentMusicPlayedIndexInPlaylist()].audioID,
+                                shufflePlaylist = false
+                            )
+                        }
+                    }
+                }
+            }
+        })
+    }
 
     fun hideMiniMusicPlayer() {
         viewModelScope.launch {
@@ -162,14 +198,15 @@ class MusicControllerViewModel @Inject constructor(
         _isVolumeMuted.value = mIsVolumeMuted
     }
 
-    fun setProgress(progress: Float) {
+    private fun setProgress(progress: Long) {
         _currentProgress.value = progress
-        _currentMusicDurationInMinute.value = TimeUnit.SECONDS.toMinutes(progress.toLong()).toInt()
-        _currentMusicDurationInSecond.value = (progress % 60).toInt()
+        _currentMusicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(progress).toInt()
+        _currentMusicDurationInSecond.value = (progress / 1000 % 60).toInt()
     }
 
-    fun applyProgress() {
-
+    fun applyProgress(progress: Long) {
+        exoPlayer.seekTo(progress)
+        setProgress(progress)
     }
 
     fun onVolumeChange() {
@@ -183,7 +220,11 @@ class MusicControllerViewModel @Inject constructor(
 
     fun getPlaylist() {
         repository.getAllMusic { musicList ->
-            _playlist.value = musicList.shuffled()
+            _playlist.value = musicList.toMutableList().apply {
+                remove(_currentMusicPlayed.value)
+                shuffle()
+                add(0, _currentMusicPlayed.value!!)
+            }
         }
     }
 
@@ -201,15 +242,24 @@ class MusicControllerViewModel @Inject constructor(
      * @param audioID Music audioID
      * @param isPlayLastMusic if true, the music will be paused
      */
-    fun play(audioID: Long, isPlayLastMusic: Boolean = false) {
+    fun play(audioID: Long, isPlayLastMusic: Boolean = false, shufflePlaylist: Boolean = true) {
+        mediaHandler = Handler(Looper.getMainLooper())
+
         repository.getPlaylist(Playlist.justPlayed.id) { justPlayedPlaylist ->
             repository.getMusic(audioID) { music ->
                 val mJustPlayedPlaylist = ArrayList(justPlayedPlaylist.musicList).apply {
                     if (!isPlayLastMusic) {
-                        if (size > 9) {
-                            removeAt(0)
-                            add(music)
-                        } else add(music)
+                        val containInPlaylist = containBy { it.audioID == music.audioID }
+                        if (size >= 10) {
+                            // if size == 10, delete first index
+                            if (!containInPlaylist) removeAt(0)
+                        }
+
+                        // if the music is already in the playlist,
+                        // remove it from the playlist
+                        if (containInPlaylist) remove(music)
+
+                        add(music)
                     }
                 }
 
@@ -217,14 +267,27 @@ class MusicControllerViewModel @Inject constructor(
                     playlist = justPlayedPlaylist.apply { musicList = mJustPlayedPlaylist },
                     action = {
                         appDatastore.setLastMusicPlayed(music.audioID) {
+                            exoPlayer.setMediaItem(MediaItem.fromUri(music.path.toUri()))
+                            exoPlayer.prepare()
                             _currentMusicPlayed.value = music
                             _isMusicPlayed.value = true
                             _isMusicFavorite.value = music.isFavorite
                             _musicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(_currentMusicPlayed.value!!.duration).toInt()
                             _musicDurationInSecond.value = TimeUnit.MILLISECONDS.toSeconds(_currentMusicPlayed.value!!.duration).toInt() % 60
 
+                            mediaRunnable = Runnable {
+                                setProgress(
+                                    if (exoPlayer.duration != -1L) exoPlayer.currentPosition else 0L
+                                )
+                                mediaHandler.postDelayed(mediaRunnable, 1000)
+                            }
+
+                            mediaHandler.post(mediaRunnable)
+
+                            if (shufflePlaylist) getPlaylist()
+
                             if (isPlayLastMusic) pause()
-                            else resume()
+                            else play()
                         }
                     }
                 )
@@ -240,7 +303,6 @@ class MusicControllerViewModel @Inject constructor(
 
     fun playLastMusic() {
         onVolumeChange()
-        getPlaylist()
         viewModelScope.launch {
             appDatastore.getLastMusicPlayed.collect { audioID ->
                 // prevent calling when audioID changes
@@ -254,42 +316,63 @@ class MusicControllerViewModel @Inject constructor(
         }
     }
 
-    fun resume() {
-//        mediaPlayer.start()
-        _isMusicPlayed.value = true
+    fun play() {
+        when {
+            !exoPlayer.isPlaying -> {
+                exoPlayer.play()
+                _isMusicPlayed.value = true
+            }
+            else -> _isMusicPlayed.value = true
+        }
     }
 
     fun pause() {
-//        mediaPlayer.pause()
-        _isMusicPlayed.value = false
+        Handler(Looper.getMainLooper()).post {
+            when {
+                exoPlayer.isPlaying -> {
+                    exoPlayer.pause()
+                    _isMusicPlayed.value = false
+                }
+                else -> _isMusicPlayed.value = false
+            }
+        }
     }
 
-    fun next() {
-        var currentMusicIndex = _playlist.value!!.indexOf(_currentMusicPlayed.value!!)
+    fun stop() {
+        exoPlayer.stop()
+        exoPlayer.release()
+    }
+
+    fun next(): Int {
+        var currentMusicIndex = currentMusicPlayedIndexInPlaylist()
 
         if (currentMusicIndex == (_playlist.value!!.size - 1)) {
             currentMusicIndex = 0
-            play(_playlist.value!![currentMusicIndex].audioID)
+            play(_playlist.value!![currentMusicIndex].audioID, shufflePlaylist = false)
         } else {
             currentMusicIndex += 1
-            play(_playlist.value!![currentMusicIndex].audioID)
+            play(_playlist.value!![currentMusicIndex].audioID, shufflePlaylist = false)
         }
 
         onNext(currentMusicIndex)
+
+        return currentMusicIndex
     }
 
-    fun previous() {
-        var currentMusicIndex = _playlist.value!!.indexOf(_currentMusicPlayed.value!!)
+    fun previous(): Int {
+        var currentMusicIndex = currentMusicPlayedIndexInPlaylist()
 
         if (currentMusicIndex == 0) {
             currentMusicIndex = _playlist.value!!.size - 1
-            play(_playlist.value!![currentMusicIndex].audioID)
+            play(_playlist.value!![currentMusicIndex].audioID, shufflePlaylist = false)
         } else {
             currentMusicIndex -= 1
-            play(_playlist.value!![currentMusicIndex].audioID)
+            play(_playlist.value!![currentMusicIndex].audioID, shufflePlaylist = false)
         }
 
         onPrevious(currentMusicIndex)
+
+        return currentMusicIndex
     }
 
     fun newPlaylist(playlist: Playlist, action: () -> Unit = {}) {

@@ -32,7 +32,6 @@ import com.anafthdev.musicompose.utils.ComposeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 @OptIn(
     ExperimentalUnitApi::class,
@@ -43,7 +42,7 @@ import java.util.concurrent.TimeUnit
 fun MiniMusicPlayer(
     scope: CoroutineScope,
     isMusicPlayed: Boolean,
-    currentProgress: Float,
+    currentProgress: Long,
     currentMusicPlayed: Music,
     musicControllerViewModel: MusicControllerViewModel,
     musicControllerState: MusicControllerViewModel.MusicControllerState,
@@ -81,7 +80,7 @@ fun MiniMusicPlayer(
                 color = sunset_orange,
                 backgroundColor = Color.Transparent,
                 progress = run {
-                    val normalizedProgress = (currentProgress - 0f) / (TimeUnit.MILLISECONDS.toSeconds(currentMusicPlayed.duration) - 0f)
+                    val normalizedProgress = currentProgress.toFloat() / currentMusicPlayed.duration
 
                     Timber.i("Normalized Progress: $normalizedProgress")
                     return@run normalizedProgress
@@ -171,7 +170,7 @@ fun MiniMusicPlayer(
                     onClick = {
                         if (isMusicPlayed) {
                             musicControllerViewModel.pause()
-                        } else musicControllerViewModel.resume()
+                        } else musicControllerViewModel.play()
                     }
                 ) {
                     AnimatedContent(

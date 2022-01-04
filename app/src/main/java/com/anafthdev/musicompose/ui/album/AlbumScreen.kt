@@ -148,8 +148,10 @@ fun AlbumScreen(
                     showImage = false,
                     isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                     onClick = {
-                        musicControllerViewModel.play(music.audioID)
-                        musicControllerViewModel.getPlaylist()
+                        if (currentMusicPlayed.audioID != music.audioID) {
+                            musicControllerViewModel.play(music.audioID)
+                            musicControllerViewModel.getPlaylist()
+                        }
                     }
                 )
             }

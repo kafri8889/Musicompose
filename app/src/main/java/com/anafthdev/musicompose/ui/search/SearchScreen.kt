@@ -223,7 +223,9 @@ fun SearchScreen(
                         showImage = false,
                         showDuration = false,
                         onClick = {
-                            musicControllerViewModel.play(music.audioID)
+                            if (currentMusicPlayed.audioID != music.audioID) {
+                                musicControllerViewModel.play(music.audioID)
+                            }
                         },
                         modifier = Modifier
                             .padding(vertical = 4.dp)

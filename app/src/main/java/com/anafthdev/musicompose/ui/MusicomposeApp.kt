@@ -87,7 +87,7 @@ fun MusicomposeApp(
 
     val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
     val currentMusicPlayMode by musicControllerViewModel.playMode.observeAsState(initial = MusicControllerViewModel.MusicPlayMode.REPEAT_ON)
-    val currentProgress by musicControllerViewModel.currentProgress.observeAsState(initial = 0f)
+    val currentProgress by musicControllerViewModel.currentProgress.observeAsState(initial = 0L)
     val currentVolume by musicControllerViewModel.currentVolume.observeAsState(initial = 0)
     val currentMusicDurationInMinute by musicControllerViewModel.currentMusicDurationInMinute.observeAsState(initial = 0)
     val currentMusicDurationInSecond by musicControllerViewModel.currentMusicDurationInSecond.observeAsState(initial = 0)

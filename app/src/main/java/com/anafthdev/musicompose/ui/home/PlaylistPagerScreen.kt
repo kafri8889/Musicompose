@@ -69,14 +69,16 @@ fun PlaylistPagerScreen(
     var playlistName by remember { mutableStateOf("") }.apply { value = stringResource(id = R.string.my_playlist) }
     val textFieldPlaylistNameFocusRequester = remember { FocusRequester() }
 
-    BackHandler {
-        when {
-            newPlaylistModalBottomSheetState.isVisible -> scope.launch {
-                newPlaylistModalBottomSheetState.hide()
+    BackHandler(
+        enabled = newPlaylistModalBottomSheetState.isVisible,
+        onBack = {
+            when {
+                newPlaylistModalBottomSheetState.isVisible -> scope.launch {
+                    newPlaylistModalBottomSheetState.hide()
+                }
             }
-            else -> navController.popBackStack()
         }
-    }
+    )
 
     if (newPlaylistModalBottomSheetState.isVisible) {
         textFieldPlaylistNameFocusRequester.requestFocus()

@@ -415,8 +415,10 @@ private fun ScreenContent(
                                 }
                             },
                             onClick = {
-                                musicControllerViewModel.play(music.audioID)
-                                musicControllerViewModel.getPlaylist()
+                                if (currentMusicPlayed.audioID != music.audioID) {
+                                    musicControllerViewModel.play(music.audioID)
+                                    musicControllerViewModel.getPlaylist()
+                                }
                             }
                         )
                     }

@@ -179,7 +179,7 @@ fun MusicScreenPlaylistSheetContent(
                     onClick = {
                         if (isMusicPlayed) {
                             musicControllerViewModel.pause()
-                        } else musicControllerViewModel.resume()
+                        } else musicControllerViewModel.play()
                     }
                 ) {
                     AnimatedContent(

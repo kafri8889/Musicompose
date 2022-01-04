@@ -3,6 +3,8 @@ package com.anafthdev.musicompose.ui.components.musicompose
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
@@ -11,7 +13,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +57,7 @@ fun MusicScreenSheetContent(
     isMusicFavorite: Boolean,
     isVolumeMuted: Boolean,
     currentVolume: Int,
-    currentProgress: Float,
+    currentProgress: Long,
     currentMusicPlayed: Music,
     currentMusicPlayMode: MusicControllerViewModel.MusicPlayMode,
     currentMusicDurationInMinute: Int,
@@ -65,6 +67,25 @@ fun MusicScreenSheetContent(
     musicControllerState: MusicControllerViewModel.MusicControllerState,
     musicControllerViewModel: MusicControllerViewModel
 ) {
+
+    // Interaction source for slider
+    val sliderInteractionSource = remember { MutableInteractionSource() }
+
+    // When slider dragged, set slider value with sliderProgressFromUser
+    // if not, then use currentProgress
+    val isSliderDragged = sliderInteractionSource.collectIsDraggedAsState()
+
+    var sliderProgressFromUser by remember { mutableStateOf(0f) }
+    var currentMusicDuration by remember { mutableStateOf("") }
+
+    currentMusicDuration = if (isSliderDragged.value) {
+        run {
+            val mMusicDurationInMinute = TimeUnit.MILLISECONDS.toMinutes(sliderProgressFromUser.toLong())
+            val mMusicDurationInSecond = TimeUnit.MILLISECONDS.toSeconds(sliderProgressFromUser.toLong()) % 60
+            "${mMusicDurationInMinute}:${if (mMusicDurationInSecond > 9) mMusicDurationInSecond else "0$mMusicDurationInSecond"}"
+        }
+    } else "$currentMusicDurationInMinute:${if (currentMusicDurationInSecond > 9) currentMusicDurationInSecond else "0$currentMusicDurationInSecond"}"
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -203,20 +224,25 @@ fun MusicScreenSheetContent(
 
                 // Slider
                 Slider(
-                    value = currentProgress,
-                    valueRange = 0f..TimeUnit.MILLISECONDS.toSeconds(currentMusicPlayed.duration).toFloat(),
+                    value = if (isSliderDragged.value) {
+                        sliderProgressFromUser
+                    } else currentProgress.toFloat(),
+                    valueRange = 0f..currentMusicPlayed.duration.toFloat(),
                     thumbRadius = 6.dp,
                     onValueChange = { progress ->
-                        musicControllerViewModel.setProgress(progress)
+                        sliderProgressFromUser = progress
                     },
                     onValueChangeFinished = {
-                        musicControllerViewModel.applyProgress()
+                        musicControllerViewModel.applyProgress(sliderProgressFromUser.toLong())
+
+                        sliderProgressFromUser = 0f
                     },
                     colors = SliderDefaults.colors(
                         activeTrackColor = ComposeUtils.lightenColor(dominantBackgroundColor, 0.6f),
                         inactiveTrackColor = ComposeUtils.lightenColor(dominantBackgroundColor, 0.6f).copy(alpha = 0.24f),
                         thumbColor = ComposeUtils.lightenColor(dominantBackgroundColor, 0.6f)
                     ),
+                    interactionSource = sliderInteractionSource,
                     modifier = Modifier
                         .fillMaxWidth()
                 )
@@ -243,7 +269,7 @@ fun MusicScreenSheetContent(
 
                     // Current music duration
                     Text(
-                        text = "$currentMusicDurationInMinute:${if (currentMusicDurationInSecond > 9) currentMusicDurationInSecond else "0$currentMusicDurationInSecond"}",
+                        text = currentMusicDuration,
                         style = typographySkModernist().body1.copy(
                             color = white,
                             fontSize = TextUnit(14f, TextUnitType.Sp)
@@ -282,7 +308,7 @@ fun MusicScreenSheetContent(
                         painter = painterResource(
                             id = when (currentMusicPlayMode) {
                                 MusicControllerViewModel.MusicPlayMode.REPEAT_OFF -> R.drawable.ic_repeate_off
-                                MusicControllerViewModel.MusicPlayMode.REPEAT_ON -> R.drawable.ic_repeate_music
+                                MusicControllerViewModel.MusicPlayMode.REPEAT_ON -> R.drawable.ic_repeate_on
                                 MusicControllerViewModel.MusicPlayMode.REPEAT_ONE -> R.drawable.ic_repeate_one
                             }
                         ),
@@ -295,7 +321,7 @@ fun MusicScreenSheetContent(
 
                 androidx.compose.material.IconButton(
                     onClick = {
-
+                        musicControllerViewModel.previous()
                     },
                     modifier = Modifier
                         .weight(0.25f)
@@ -314,7 +340,7 @@ fun MusicScreenSheetContent(
                     onClick = {
                         if (isMusicPlayed) {
                             musicControllerViewModel.pause()
-                        } else musicControllerViewModel.resume()
+                        } else musicControllerViewModel.play()
                     },
                     modifier = Modifier
                         .weight(0.3f, fill = false)
@@ -350,7 +376,7 @@ fun MusicScreenSheetContent(
 
                 androidx.compose.material.IconButton(
                     onClick = {
-
+                        musicControllerViewModel.next()
                     },
                     modifier = Modifier
                         .weight(0.25f)

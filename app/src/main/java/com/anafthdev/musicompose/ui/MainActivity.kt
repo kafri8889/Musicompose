@@ -2,7 +2,6 @@ package com.anafthdev.musicompose.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -74,10 +73,6 @@ class MainActivity : ComponentActivity() {
 			permissionResultLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
 		}
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			window.setDecorFitsSystemWindows(false)
-		}
-
 		// register SettingsContentObserver, used to observe changes in volume
 		contentResolver.registerContentObserver(
 			android.provider.Settings.System.CONTENT_URI,
@@ -137,6 +132,7 @@ class MainActivity : ComponentActivity() {
 
 	override fun onDestroy() {
 		super.onDestroy()
+		musicControllerViewModel.stop()
 		contentResolver.unregisterContentObserver(settingsContentObserver)
 	}
 }

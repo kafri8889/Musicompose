@@ -17,7 +17,31 @@ object AppUtils {
     }
 
     /**
-     * Checks if the specified element is contained in this collection with given [predicate].
+     * Convert element.
+     * @author kafri8889
+     */
+    fun <T, R> Collection<T>.convert(to: (T) -> R): List<R> {
+        val result = ArrayList<R>()
+        this.forEach { result.add(to(it)) }
+        return result
+    }
+
+    /**
+     * Remove element by given [predicate].
+     * @author kafri8889
+     */
+    fun <T> Collection<T>.removeBy(predicate: (T) -> Boolean): List<T> {
+        val result = ArrayList(this)
+
+        this.forEachIndexed { i, t ->
+            if (predicate(t)) result.removeAt(i)
+        }
+
+        return result
+    }
+
+    /**
+     * Checks if the specified element is contained in this collection by given [predicate].
      * @author kafri8889
      */
     fun <T> Collection<T>.containBy(predicate: (T) -> Boolean): Boolean {

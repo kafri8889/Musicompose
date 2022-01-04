@@ -76,9 +76,11 @@ fun PlaylistList(
                 itemBackgroundColor = itemBackgroundColor,
                 isMusicPlayed = currentMusicPlayed.audioID == music.audioID,
                 onClick = {
-                    musicControllerViewModel.play(music.audioID)
-                    scope.launch {
-                        state.listState.animateScrollToItem(musicControllerViewModel.currentMusicPlayedIndexInPlaylist())
+                    if (currentMusicPlayed.audioID != music.audioID) {
+                        musicControllerViewModel.play(music.audioID, shufflePlaylist = false)
+                        scope.launch {
+                            state.listState.animateScrollToItem(musicControllerViewModel.currentMusicPlayedIndexInPlaylist())
+                        }
                     }
                 },
                 modifier = Modifier

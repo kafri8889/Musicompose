@@ -33,6 +33,7 @@ import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.theme.*
+import com.anafthdev.musicompose.utils.minimumTouchTargetSize
 import java.text.SimpleDateFormat
 import java.util.*
 
