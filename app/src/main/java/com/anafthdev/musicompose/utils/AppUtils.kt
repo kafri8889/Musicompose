@@ -6,14 +6,14 @@ import android.widget.Toast
 object AppUtils {
 
     object PreferencesKey {
-        const val SORT_MUSIC_OPTION = "sort_music_option"
-        const val LAST_MUSIC_PLAYED = "last_music_played"
+        const val SORT_MUSIC_OPTION = "com.anafthdev.musicompose:prefKey:sort_music_option"
+        const val LAST_MUSIC_PLAYED = "com.anafthdev.musicompose:prefKey:last_music_played"
     }
 
     object PreferencesValue {
-        const val SORT_MUSIC_BY_NAME = "sort_music_by_name"
-        const val SORT_MUSIC_BY_ARTIST_NAME = "sort_music_by_artist_name"
-        const val SORT_MUSIC_BY_DATE_ADDED = "sort_music_by_date_added"
+        const val SORT_MUSIC_BY_NAME = "com.anafthdev.musicompose:prefVal:sort_music_by_name"
+        const val SORT_MUSIC_BY_ARTIST_NAME = "com.anafthdev.musicompose:prefVal:sort_music_by_artist_name"
+        const val SORT_MUSIC_BY_DATE_ADDED = "com.anafthdev.musicompose:prefVal:sort_music_by_date_added"
     }
 
     /**

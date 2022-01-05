@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -36,12 +35,12 @@ import com.anafthdev.musicompose.utils.AppUtils
 import com.anafthdev.musicompose.utils.ComposeUtils.LifecycleEventListener
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.pagerTabIndicatorOffset
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 @OptIn(
     ExperimentalAnimationApi::class,
@@ -104,6 +103,8 @@ fun HomeScreen(
     var showDropdownMenu by remember { mutableStateOf(false) }
 
     musicControllerViewModel.showMiniMusicPlayer()
+
+    Timber.i("currentPage: ${pagerState.currentPage}")
 
     // get all playlist when currentPage is "playlist"
     if (pagerState.currentPage == 3) {
@@ -297,13 +298,15 @@ fun HomeScreen(
                     edgePadding = 8.dp,
                     divider = {},
                     indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            height = 2.4f.dp,
-                            color = sunset_orange,
-                            modifier = Modifier
-                                .pagerTabIndicatorOffset(pagerState, tabPositions)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                        // TODO: 05/01/2022 pagerState.currentPage move to last index when screen is on (onStart),
+                        //  (cause "Cannot round NaN value" if use indicator)
+//                        TabRowDefaults.Indicator(
+//                            height = 2.4f.dp,
+//                            color = sunset_orange,
+//                            modifier = Modifier
+//                                .pagerTabIndicatorOffset(pagerState, tabPositions)
+//                                .clip(RoundedCornerShape(8.dp))
+//                        )
                     }
                 ) {
                     pages.forEachIndexed { index, label ->

@@ -1,4 +1,4 @@
-package com.anafthdev.musicompose.common
+package com.anafthdev.musicompose.utils
 
 import android.content.Context
 import android.net.Uri
@@ -7,7 +7,7 @@ import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
 import timber.log.Timber
 
-object MusicManager {
+object MusicUtil {
 
 	fun getMusicCount(context: Context): Int {
 		var count = 0

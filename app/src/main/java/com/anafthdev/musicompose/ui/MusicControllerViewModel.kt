@@ -1,6 +1,7 @@
 package com.anafthdev.musicompose.ui
 
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioManager
 import android.os.Handler
@@ -14,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
+import com.anafthdev.musicompose.common.MediaPlayerManager
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
@@ -22,7 +24,6 @@ import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,6 +105,7 @@ class MusicControllerViewModel @Inject constructor(
     private var lastVolumeValue = 0
     private var lastMusicPlayed = false
 
+    private val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private var mediaHandler = Handler(Looper.getMainLooper())
     private var mediaRunnable = Runnable {}
     private val exoPlayer = ExoPlayer.Builder(application).build().apply {
@@ -114,10 +116,9 @@ class MusicControllerViewModel @Inject constructor(
                     when (_playMode.value!!) {
                         MusicPlayMode.REPEAT_OFF -> {
                             this@MusicControllerViewModel.next()
-                            viewModelScope.launch {
-                                delay(1000)
+                            Handler(Looper.getMainLooper()).postDelayed({
                                 this@MusicControllerViewModel.pause()
-                            }
+                            }, 3000)
                         }
                         MusicPlayMode.REPEAT_ON -> {
                             this@MusicControllerViewModel.next()
@@ -133,6 +134,21 @@ class MusicControllerViewModel @Inject constructor(
             }
         })
     }
+
+    private val mediaPlayerState = MediaPlayerManager.MediaPlayerState(
+        title = _currentMusicPlayed.value!!.title,
+        album = _currentMusicPlayed.value!!.album,
+        artist = _currentMusicPlayed.value!!.artist,
+        duration = _currentMusicPlayed.value!!.duration,
+        albumArtPath = _currentMusicPlayed.value!!.albumPath,
+        currentPosition = _currentProgress.value!!,
+        isMusicPlayed = _isMusicPlayed.value!!
+    )
+
+    private val mediaPlayerManager = MediaPlayerManager.getInstance(
+        application,
+        mediaPlayerState
+    )
 
     fun hideMiniMusicPlayer() {
         viewModelScope.launch {
@@ -199,6 +215,12 @@ class MusicControllerViewModel @Inject constructor(
     }
 
     private fun setProgress(progress: Long) {
+        mediaPlayerManager.updateState(
+            mediaPlayerState.apply {
+                currentPosition = progress
+            }
+        )
+
         _currentProgress.value = progress
         _currentMusicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(progress).toInt()
         _currentMusicDurationInSecond.value = (progress / 1000 % 60).toInt()
@@ -270,6 +292,7 @@ class MusicControllerViewModel @Inject constructor(
                             exoPlayer.setMediaItem(MediaItem.fromUri(music.path.toUri()))
                             exoPlayer.prepare()
                             _currentMusicPlayed.value = music
+                            _currentProgress.value = 0L
                             _isMusicPlayed.value = true
                             _isMusicFavorite.value = music.isFavorite
                             _musicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(_currentMusicPlayed.value!!.duration).toInt()
@@ -279,10 +302,22 @@ class MusicControllerViewModel @Inject constructor(
                                 setProgress(
                                     if (exoPlayer.duration != -1L) exoPlayer.currentPosition else 0L
                                 )
+
                                 mediaHandler.postDelayed(mediaRunnable, 1000)
                             }
 
                             mediaHandler.post(mediaRunnable)
+
+                            mediaPlayerManager.updateState(
+                                mediaPlayerState.apply {
+                                    title = _currentMusicPlayed.value!!.title
+                                    album = _currentMusicPlayed.value!!.album
+                                    artist = _currentMusicPlayed.value!!.artist
+                                    duration = _currentMusicPlayed.value!!.duration
+                                    currentPosition = _currentProgress.value!!
+                                    albumArtPath = _currentMusicPlayed.value!!.albumPath
+                                }
+                            )
 
                             if (shufflePlaylist) getPlaylist()
 
@@ -317,6 +352,8 @@ class MusicControllerViewModel @Inject constructor(
     }
 
     fun play() {
+        notificationManager.notify(0, mediaPlayerManager.mediaNotification())
+
         when {
             !exoPlayer.isPlaying -> {
                 exoPlayer.play()
@@ -324,23 +361,34 @@ class MusicControllerViewModel @Inject constructor(
             }
             else -> _isMusicPlayed.value = true
         }
+
+        mediaPlayerManager.updateState(
+            mediaPlayerState.apply {
+                isMusicPlayed = _isMusicPlayed.value!!
+            }
+        )
     }
 
     fun pause() {
-        Handler(Looper.getMainLooper()).post {
-            when {
-                exoPlayer.isPlaying -> {
-                    exoPlayer.pause()
-                    _isMusicPlayed.value = false
-                }
-                else -> _isMusicPlayed.value = false
+        when {
+            exoPlayer.isPlaying -> {
+                exoPlayer.pause()
+                _isMusicPlayed.value = false
             }
+            else -> _isMusicPlayed.value = false
         }
+
+        mediaPlayerManager.updateState(
+            mediaPlayerState.apply {
+                isMusicPlayed = _isMusicPlayed.value!!
+            }
+        )
     }
 
     fun stop() {
         exoPlayer.stop()
         exoPlayer.release()
+        notificationManager.cancelAll()
     }
 
     fun next(): Int {
@@ -408,5 +456,10 @@ class MusicControllerViewModel @Inject constructor(
         REPEAT_OFF,
         REPEAT_ON,
         REPEAT_ONE,
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stop()
     }
 }

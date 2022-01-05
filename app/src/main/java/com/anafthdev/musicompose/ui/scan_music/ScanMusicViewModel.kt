@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.anafthdev.musicompose.common.MusicManager
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
+import com.anafthdev.musicompose.utils.MusicUtil
 
 class ScanMusicViewModel(
     private val repository: MusicomposeRepositoryImpl
@@ -15,8 +15,8 @@ class ScanMusicViewModel(
     val scannedMusicInPercent: LiveData<Int> = _scannedMusicInPercent
 
     fun scanLocalSong(context: Context, onComplete: () -> Unit) {
-        val totalMusic = MusicManager.getMusicCount(context)
-        val musicList = MusicManager.getMusic(
+        val totalMusic = MusicUtil.getMusicCount(context)
+        val musicList = MusicUtil.getMusic(
             context = context,
             scannedMusicCount = { scannedMusicCount ->
                 // ((scanned / total) * 100%) * 100
