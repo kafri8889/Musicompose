@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.anafthdev.musicompose">
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -14,7 +15,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Musicompose"
         android:requestLegacyExternalStorage="true">
-        <receiver android:name=".common.broadcast_receiver.MediaPlayerReceiver"/>
+
+        <receiver android:name=".common.MediaPlayerReceiver"/>
+
+        <service
+            android:name=".common.MediaPlayerService"
+            android:enabled="true" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"

@@ -6,18 +6,29 @@ import android.content.ContextWrapper
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.utils.NotificationUtil
+import timber.log.Timber
+import java.io.Serializable
 
 class MediaPlayerManager(
     context: Context,
-    private val state: MediaPlayerState
 ): ContextWrapper(context) {
-
-    private val notificationUtil = NotificationUtil(this)
 
     private val mediaSession = MediaSession(this, "MediaPlayerService")
 
     private val mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
+
+    val token = mediaSession.sessionToken
+    val state = MediaPlayerState(
+        title = Music.unknown.title,
+        album = Music.unknown.album,
+        artist = Music.unknown.artist,
+        duration = Music.unknown.duration,
+        albumArtPath = Music.unknown.albumPath,
+        currentPosition = 0,
+        isMusicPlayed = false
+    )
 
     private var playbackState: PlaybackState = PlaybackState.Builder()
         .setState(
@@ -30,10 +41,6 @@ class MediaPlayerManager(
     init {
         applyMetaData()
         applyPlaybackState()
-    }
-
-    fun mediaNotification(): Notification {
-        return notificationUtil.notificationMediaPlayer(mediaStyle)
     }
 
     private fun applyPlaybackState() {
@@ -80,7 +87,17 @@ class MediaPlayerManager(
         var currentPosition: Long,
         var albumArtPath: String,
         var isMusicPlayed: Boolean,
-    )
+    ): Serializable
+
+    interface MediaPLayerAction {
+
+        fun playPause()
+
+        fun next()
+
+        fun previous()
+
+    }
 
     companion object {
         const val ACTION_PLAY_PAUSE = "com.anafthdev.musicompose:media:play_pause"
@@ -91,11 +108,10 @@ class MediaPlayerManager(
 
         fun getInstance(
             base: Context,
-            state: MediaPlayerState
         ): MediaPlayerManager {
             if (INSTANCE == null) {
                 synchronized(MediaPlayerManager::class.java) {
-                    INSTANCE = MediaPlayerManager(base, state)
+                    INSTANCE = MediaPlayerManager(base)
                 }
             }
 

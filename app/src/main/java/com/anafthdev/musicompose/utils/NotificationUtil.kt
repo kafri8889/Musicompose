@@ -5,75 +5,116 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.MediaPlayerManager
-import com.anafthdev.musicompose.common.broadcast_receiver.MediaPlayerReceiver
+import com.anafthdev.musicompose.common.MediaPlayerReceiver
+import com.anafthdev.musicompose.ui.MainActivity
 
-class NotificationUtil(context: Context): ContextWrapper(context) {
+object NotificationUtil {
 
-    private val channelID = "player_notification"
-    private val channelName = "Media Player"
-
-    private var notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private const val channelID = "player_notification"
+    private const val channelName = "Media Player"
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun createChannel() {
+    fun createChannel(context: Context) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(channelID, channelName, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(channel)
     }
 
-    fun notificationMediaPlayer(mediaStyle: Notification.MediaStyle): Notification {
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, channelID)
-        } else Notification.Builder(this)
+    fun foregroundNotification(context: Context): Notification {
+        val pi = PendingIntent.getActivity(
+            context,
+            123,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, channelID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Musicompose")
+                .setContentText("Musicompose running in the foreground")
+                .setContentIntent(pi)
+                .build()
+        } else {
+            Notification.Builder(context)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Musicompose")
+                .setContentText("Musicompose running in the foreground")
+                .setContentIntent(pi)
+                .build()
+        }
+    }
 
-        val playPauseIntent = Intent(this, MediaPlayerReceiver::class.java)
+    fun notificationMediaPlayer(
+        context: Context,
+        mediaStyle: Notification.MediaStyle,
+        state: MediaPlayerManager.MediaPlayerState
+    ): Notification {
+
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, channelID)
+        } else Notification.Builder(context)
+
+        val contentIntent = Intent(context, MainActivity::class.java)
+        val contentPI = PendingIntent.getActivity(
+            context,
+            0,
+            contentIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+
+
+        val playPauseIntent = Intent(context, MediaPlayerReceiver::class.java)
             .setAction(MediaPlayerManager.ACTION_PLAY_PAUSE)
         val playPausePI = PendingIntent.getBroadcast(
-            this,
-            0,
+            context,
+            1,
             playPauseIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val playPauseAction = Notification.Action.Builder(
-            Icon.createWithResource(this, R.drawable.ic_play_filled_rounded),
+            Icon.createWithResource(
+                context,
+                if (state.isMusicPlayed) R.drawable.ic_pause_filled_rounded else R.drawable.ic_play_filled_rounded
+            ),
             "PlayPause",
             playPausePI
         ).build()
 
 
 
-        val previousIntent = Intent(this, MediaPlayerReceiver::class.java)
+        val previousIntent = Intent(context, MediaPlayerReceiver::class.java)
             .setAction(MediaPlayerManager.ACTION_PREVIOUS)
         val previousPI = PendingIntent.getBroadcast(
-            this,
-            0,
+            context,
+            2,
             previousIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val previousAction = Notification.Action.Builder(
-            Icon.createWithResource(this, R.drawable.ic_previous_filled_rounded),
+            Icon.createWithResource(context, R.drawable.ic_previous_filled_rounded),
             "Previous",
             previousPI
         ).build()
 
 
 
-        val nextIntent = Intent(this, MediaPlayerReceiver::class.java)
+        val nextIntent = Intent(context, MediaPlayerReceiver::class.java)
             .setAction(MediaPlayerManager.ACTION_NEXT)
         val nextPI = PendingIntent.getBroadcast(
-            this,
-            0,
+            context,
+            3,
             nextIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val nextAction = Notification.Action.Builder(
-            Icon.createWithResource(this, R.drawable.ic_next_filled_rounded),
+            Icon.createWithResource(context, R.drawable.ic_next_filled_rounded),
             "Previous",
             nextPI
         ).build()
@@ -81,9 +122,11 @@ class NotificationUtil(context: Context): ContextWrapper(context) {
         return builder
             .setStyle(mediaStyle)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOnlyAlertOnce(true)
             .addAction(previousAction)
             .addAction(playPauseAction)
             .addAction(nextAction)
+            .setContentIntent(contentPI)
             .build()
     }
 

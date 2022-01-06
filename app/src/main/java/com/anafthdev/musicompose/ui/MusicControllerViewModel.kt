@@ -3,7 +3,9 @@ package com.anafthdev.musicompose.ui
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.material.*
@@ -16,6 +18,7 @@ import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.common.MediaPlayerManager
+import com.anafthdev.musicompose.common.MediaPlayerService
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
@@ -105,6 +108,10 @@ class MusicControllerViewModel @Inject constructor(
     private var lastVolumeValue = 0
     private var lastMusicPlayed = false
 
+    private val serviceIntent = Intent(application, MediaPlayerService::class.java).apply {
+        putExtra("mediaPLayerState", mediaPlayerState)
+    }
+
     private val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private var mediaHandler = Handler(Looper.getMainLooper())
     private var mediaRunnable = Runnable {}
@@ -145,10 +152,7 @@ class MusicControllerViewModel @Inject constructor(
         isMusicPlayed = _isMusicPlayed.value!!
     )
 
-    private val mediaPlayerManager = MediaPlayerManager.getInstance(
-        application,
-        mediaPlayerState
-    )
+    private val mediaPlayerManager = MediaPlayerManager.getInstance(application)
 
     fun hideMiniMusicPlayer() {
         viewModelScope.launch {
@@ -224,6 +228,13 @@ class MusicControllerViewModel @Inject constructor(
         _currentProgress.value = progress
         _currentMusicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(progress).toInt()
         _currentMusicDurationInSecond.value = (progress / 1000 % 60).toInt()
+
+        serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
+        serviceIntent.putExtra("sessionToken", mediaPlayerManager.token)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            application.startForegroundService(serviceIntent)
+        } else application.startService(serviceIntent)
     }
 
     fun applyProgress(progress: Long) {
@@ -352,8 +363,6 @@ class MusicControllerViewModel @Inject constructor(
     }
 
     fun play() {
-        notificationManager.notify(0, mediaPlayerManager.mediaNotification())
-
         when {
             !exoPlayer.isPlaying -> {
                 exoPlayer.play()
@@ -367,6 +376,12 @@ class MusicControllerViewModel @Inject constructor(
                 isMusicPlayed = _isMusicPlayed.value!!
             }
         )
+
+        serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            application.startForegroundService(serviceIntent)
+        } else application.startService(serviceIntent)
     }
 
     fun pause() {
@@ -383,6 +398,12 @@ class MusicControllerViewModel @Inject constructor(
                 isMusicPlayed = _isMusicPlayed.value!!
             }
         )
+
+        serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            application.startForegroundService(serviceIntent)
+        } else application.startService(serviceIntent)
     }
 
     fun stop() {

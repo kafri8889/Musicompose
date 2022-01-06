@@ -1,7 +1,11 @@
 package com.anafthdev.musicompose
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
+import androidx.annotation.RequiresApi
 import com.anafthdev.musicompose.di.ApplicationComponent
 import com.anafthdev.musicompose.di.ApplicationModule
 import com.anafthdev.musicompose.di.DaggerApplicationComponent
@@ -16,7 +20,8 @@ class MusicomposeApplication: Application() {
     override fun onCreate() {
         super.onCreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationUtil(this).createChannel()
+            NotificationUtil.createChannel(this)
         }
     }
+
 }
