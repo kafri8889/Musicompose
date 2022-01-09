@@ -3,18 +3,20 @@ package com.anafthdev.musicompose.common
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Binder
 import android.os.IBinder
+import android.view.KeyEvent
 import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.utils.NotificationUtil
 import timber.log.Timber
 
+@Suppress("deprecation")
 class MediaPlayerService: Service() {
 
     private var mediaPLayerAction: MediaPlayerAction? = null
@@ -23,15 +25,35 @@ class MediaPlayerService: Service() {
     private lateinit var mediaSession: MediaSession
     private lateinit var mediaStyle: Notification.MediaStyle
     private lateinit var notificationManager: NotificationManager
+    private lateinit var audioManager: AudioManager
 
     private var isForegroundService = false
 
     override fun onCreate() {
         super.onCreate()
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         mediaSession = MediaSession(this, "MediaPlayerSessionService")
         mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
+
+        mediaSession.setCallback(object : MediaSession.Callback() {
+            override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
+
+                if (Intent.ACTION_MEDIA_BUTTON == mediaButtonIntent.action) {
+                    val event = mediaButtonIntent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+
+                    when (event!!.keyCode) {
+                        KeyEvent.KEYCODE_MEDIA_PLAY -> mediaPLayerAction?.resume()
+                        KeyEvent.KEYCODE_MEDIA_PAUSE -> mediaPLayerAction?.pause()
+                        KeyEvent.KEYCODE_MEDIA_NEXT -> mediaPLayerAction?.next()
+                        KeyEvent.KEYCODE_MEDIA_PREVIOUS -> mediaPLayerAction?.previous()
+                    }
+                }
+
+                return true
+            }
+        })
 
         mediaSession.setMetadata(
             MediaMetadata.Builder()
