@@ -20,7 +20,7 @@ import com.anafthdev.musicompose.BuildConfig
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
-import com.anafthdev.musicompose.common.MediaPlayerManager
+import com.anafthdev.musicompose.common.MediaPlayerAction
 import com.anafthdev.musicompose.common.MediaPlayerService
 import com.anafthdev.musicompose.common.SettingsContentObserver
 import com.anafthdev.musicompose.model.Playlist
@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
 	override fun onStart() {
 		super.onStart()
+
 		// register SettingsContentObserver, used to observe changes in volume
 		contentResolver.registerContentObserver(
 			android.provider.Settings.System.CONTENT_URI,
@@ -167,14 +168,22 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 		contentResolver.unregisterContentObserver(settingsContentObserver)
 	}
 
+	override fun onDestroy() {
+		super.onDestroy()
+
+		unbindService(this)
+	}
+
 	override fun onServiceConnected(name: ComponentName?, service: IBinder) {
 		val binder = service as MediaPlayerService.MediaPlayerServiceBinder
 		mediaPlayerService = binder.getService()
-		mediaPlayerService!!.setMediaPlayerAction(object : MediaPlayerManager.MediaPLayerAction {
-			override fun playPause() {
-				if (musicControllerViewModel.isMusicPlayed.value == true) {
-					musicControllerViewModel.pause()
-				} else musicControllerViewModel.play()
+		mediaPlayerService!!.setMediaPlayerAction(object : MediaPlayerAction {
+			override fun resume() {
+				musicControllerViewModel.resume()
+			}
+
+			override fun pause() {
+				musicControllerViewModel.pause()
 			}
 
 			override fun next() {
@@ -183,6 +192,10 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
 			override fun previous() {
 				musicControllerViewModel.previous()
+			}
+
+			override fun stop() {
+				musicControllerViewModel.stop()
 			}
 		})
 	}

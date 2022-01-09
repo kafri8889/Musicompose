@@ -343,6 +343,7 @@ fun HomeScreen(
                     when (page) {
                         0 -> SongPagerScreen(
                             homeViewModel = homeViewModel,
+                            navController = navController,
                             musicControllerViewModel = musicControllerViewModel
                         )
                         1 -> AlbumPagerScreen(

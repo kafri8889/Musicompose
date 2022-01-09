@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.anafthdev.musicompose.utils.AppUtils.toast
+import com.anafthdev.musicompose.model.MediaPlayerState
 
 const val MediaPlayerReceiver_Tag = "MediaPlayerReceiver"
 
@@ -19,31 +19,40 @@ class MediaPlayerReceiver: BroadcastReceiver() {
                 lazyMessage = { "$MediaPlayerReceiver_Tag:null action" }
             )
         ) {
-            MediaPlayerManager.ACTION_PLAY_PAUSE -> {
+            MediaPlayerState.ACTION_PLAY -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(
-                        serviceIntent.setAction(MediaPlayerManager.ACTION_PLAY_PAUSE)
+                        serviceIntent.setAction(MediaPlayerState.ACTION_PLAY)
                     )
                 } else context.startService(
-                    serviceIntent.setAction(MediaPlayerManager.ACTION_PLAY_PAUSE)
+                    serviceIntent.setAction(MediaPlayerState.ACTION_PLAY)
                 )
             }
-            MediaPlayerManager.ACTION_NEXT -> {
+            MediaPlayerState.ACTION_PAUSE -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(
-                        serviceIntent.setAction(MediaPlayerManager.ACTION_NEXT)
+                        serviceIntent.setAction(MediaPlayerState.ACTION_PAUSE)
                     )
                 } else context.startService(
-                    serviceIntent.setAction(MediaPlayerManager.ACTION_NEXT)
+                    serviceIntent.setAction(MediaPlayerState.ACTION_PAUSE)
                 )
             }
-            MediaPlayerManager.ACTION_PREVIOUS -> {
+            MediaPlayerState.ACTION_NEXT -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(
-                        serviceIntent.setAction(MediaPlayerManager.ACTION_PREVIOUS)
+                        serviceIntent.setAction(MediaPlayerState.ACTION_NEXT)
                     )
                 } else context.startService(
-                    serviceIntent.setAction(MediaPlayerManager.ACTION_PREVIOUS)
+                    serviceIntent.setAction(MediaPlayerState.ACTION_NEXT)
+                )
+            }
+            MediaPlayerState.ACTION_PREVIOUS -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(
+                        serviceIntent.setAction(MediaPlayerState.ACTION_PREVIOUS)
+                    )
+                } else context.startService(
+                    serviceIntent.setAction(MediaPlayerState.ACTION_PREVIOUS)
                 )
             }
         }

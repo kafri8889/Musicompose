@@ -27,5 +27,8 @@
     <string name="edit">Edit</string>
     <string name="ok">Oke</string>
     <string name="add_song">Tambahkan lagu</string>
+    <string name="no_song">Tidak ada lagu</string>
+    <string name="no_album">Tidak ada album</string>
+    <string name="no_artist">Tidak ada artis</string>
 
 </resources>

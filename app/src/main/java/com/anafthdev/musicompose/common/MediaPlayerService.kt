@@ -10,24 +10,26 @@ import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Binder
 import android.os.IBinder
+import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.utils.NotificationUtil
 import timber.log.Timber
 
-const val MediaPlayerService_Tag = "MediaPlayerService"
-
 class MediaPlayerService: Service() {
 
-    private var mediaPLayerAction: MediaPlayerManager.MediaPLayerAction? = null
+    private var mediaPLayerAction: MediaPlayerAction? = null
 
     private val mBinder: IBinder = MediaPlayerServiceBinder()
-    private lateinit var mediaPlayerManager: MediaPlayerManager
     private lateinit var mediaSession: MediaSession
     private lateinit var mediaStyle: Notification.MediaStyle
+    private lateinit var notificationManager: NotificationManager
+
+    private var isForegroundService = false
 
     override fun onCreate() {
         super.onCreate()
-        mediaPlayerManager = MediaPlayerManager.getInstance(this)
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         mediaSession = MediaSession(this, "MediaPlayerSessionService")
         mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
 
@@ -41,7 +43,9 @@ class MediaPlayerService: Service() {
                 .build()
         )
 
-        startForeground(123, NotificationUtil.foregroundNotification(this))
+        startForeground(123, NotificationUtil.foregroundNotification(this)).also {
+            isForegroundService = true
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -50,57 +54,67 @@ class MediaPlayerService: Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         when (intent.action) {
-            MediaPlayerManager.ACTION_PLAY_PAUSE -> mediaPLayerAction?.playPause()
-            MediaPlayerManager.ACTION_NEXT -> mediaPLayerAction?.next()
-            MediaPlayerManager.ACTION_PREVIOUS -> mediaPLayerAction?.previous()
+            MediaPlayerState.ACTION_PLAY -> mediaPLayerAction?.resume()
+            MediaPlayerState.ACTION_PAUSE -> mediaPLayerAction?.pause()
+            MediaPlayerState.ACTION_NEXT -> mediaPLayerAction?.next()
+            MediaPlayerState.ACTION_PREVIOUS -> mediaPLayerAction?.previous()
         }
 
         intent.getSerializableExtra("mediaPLayerState")?.let { newState ->
-            newState as MediaPlayerManager.MediaPlayerState
+            newState as MediaPlayerState
 
-            mediaSession.setPlaybackState(
-                PlaybackState.Builder()
-                    .setState(
-                        if (newState.isMusicPlayed) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED,
-                        newState.currentPosition,
-                        1f
-                    )
-                    .setActions(PlaybackState.ACTION_PLAY_PAUSE)
-                    .build()
-            )
+            if (isForegroundService and (newState.duration != 0L)) {
 
-            mediaSession.setMetadata(
-                MediaMetadata.Builder()
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, newState.title)
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, newState.album)
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, newState.artist)
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, newState.albumArtPath)
-                    .putLong(MediaMetadata.METADATA_KEY_DURATION, newState.duration)
-                    .build()
-            )
-
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(
-                0,
-                NotificationUtil.notificationMediaPlayer(
-                    applicationContext,
-                    Notification.MediaStyle().setMediaSession(mediaSession.sessionToken),
-                    newState
+                mediaSession.setPlaybackState(
+                    PlaybackState.Builder()
+                        .setState(
+                            if (newState.isMusicPlayed) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED,
+                            newState.currentPosition,
+                            1f
+                        )
+                        .setActions(PlaybackState.ACTION_PLAY_PAUSE)
+                        .build()
                 )
-            )
 
-            Timber.i("to MediaPLayerState: $newState")
+                mediaSession.setMetadata(
+                    MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_TITLE, newState.title)
+                        .putString(MediaMetadata.METADATA_KEY_ALBUM, newState.album)
+                        .putString(MediaMetadata.METADATA_KEY_ARTIST, newState.artist)
+                        .putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, newState.albumArtPath)
+                        .putLong(MediaMetadata.METADATA_KEY_DURATION, newState.duration)
+                        .build()
+                )
+
+                notificationManager.notify(
+                    0,
+                    NotificationUtil.notificationMediaPlayer(
+                        applicationContext,
+                        Notification.MediaStyle().setMediaSession(mediaSession.sessionToken),
+                        newState
+                    )
+                )
+
+                Timber.i("new MediaPLayerState: $newState")
+            }
         }
 
         return START_NOT_STICKY
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        stopForeground(true)
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+        mediaSession.isActive = false
+        mediaPLayerAction?.stop()
+        mediaSession.release()
+        notificationManager.cancelAll()
+        stopForeground(true).also {
+            isForegroundService = false
+        }
+
         super.onTaskRemoved(rootIntent)
     }
 
-    fun setMediaPlayerAction(playerAction: MediaPlayerManager.MediaPLayerAction) {
+    fun setMediaPlayerAction(playerAction: MediaPlayerAction) {
         this.mediaPLayerAction = playerAction
     }
 

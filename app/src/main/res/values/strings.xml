@@ -28,5 +28,8 @@
     <string name="edit">Edit</string>
     <string name="ok">OK</string>
     <string name="add_song">Add song</string>
+    <string name="no_song">No Song</string>
+    <string name="no_album">No Album</string>
+    <string name="no_artist">No Artist</string>
 
 </resources>

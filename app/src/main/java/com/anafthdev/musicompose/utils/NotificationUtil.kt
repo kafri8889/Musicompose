@@ -10,8 +10,8 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.anafthdev.musicompose.R
-import com.anafthdev.musicompose.common.MediaPlayerManager
 import com.anafthdev.musicompose.common.MediaPlayerReceiver
+import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.ui.MainActivity
 
 object NotificationUtil {
@@ -23,9 +23,17 @@ object NotificationUtil {
     fun createChannel(context: Context) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(channelID, channelName, NotificationManager.IMPORTANCE_HIGH)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            channel.setAllowBubbles(false)
+        }
+
+        channel.enableLights(false)
+        channel.setBypassDnd(true)
+
         notificationManager.createNotificationChannel(channel)
     }
 
+    @Suppress("deprecation")
     fun foregroundNotification(context: Context): Notification {
         val pi = PendingIntent.getActivity(
             context,
@@ -50,10 +58,11 @@ object NotificationUtil {
         }
     }
 
+    @Suppress("deprecation")
     fun notificationMediaPlayer(
         context: Context,
         mediaStyle: Notification.MediaStyle,
-        state: MediaPlayerManager.MediaPlayerState
+        state: MediaPlayerState
     ): Notification {
 
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -71,7 +80,9 @@ object NotificationUtil {
 
 
         val playPauseIntent = Intent(context, MediaPlayerReceiver::class.java)
-            .setAction(MediaPlayerManager.ACTION_PLAY_PAUSE)
+            .setAction(
+                if (state.isMusicPlayed) MediaPlayerState.ACTION_PAUSE else MediaPlayerState.ACTION_PLAY
+            )
         val playPausePI = PendingIntent.getBroadcast(
             context,
             1,
@@ -90,7 +101,7 @@ object NotificationUtil {
 
 
         val previousIntent = Intent(context, MediaPlayerReceiver::class.java)
-            .setAction(MediaPlayerManager.ACTION_PREVIOUS)
+            .setAction(MediaPlayerState.ACTION_PREVIOUS)
         val previousPI = PendingIntent.getBroadcast(
             context,
             2,
@@ -106,7 +117,7 @@ object NotificationUtil {
 
 
         val nextIntent = Intent(context, MediaPlayerReceiver::class.java)
-            .setAction(MediaPlayerManager.ACTION_NEXT)
+            .setAction(MediaPlayerState.ACTION_NEXT)
         val nextPI = PendingIntent.getBroadcast(
             context,
             3,

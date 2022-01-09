@@ -340,7 +340,7 @@ fun MusicScreenSheetContent(
                     onClick = {
                         if (isMusicPlayed) {
                             musicControllerViewModel.pause()
-                        } else musicControllerViewModel.play()
+                        } else musicControllerViewModel.resume()
                     },
                     modifier = Modifier
                         .weight(0.3f, fill = false)

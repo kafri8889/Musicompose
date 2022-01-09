@@ -17,9 +17,9 @@ import androidx.lifecycle.viewModelScope
 import com.anafthdev.musicompose.MusicomposeApplication
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
-import com.anafthdev.musicompose.common.MediaPlayerManager
 import com.anafthdev.musicompose.common.MediaPlayerService
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
+import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.model.Music
 import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.utils.AppUtils.containBy
@@ -142,7 +142,7 @@ class MusicControllerViewModel @Inject constructor(
         })
     }
 
-    private val mediaPlayerState = MediaPlayerManager.MediaPlayerState(
+    private val mediaPlayerState = MediaPlayerState(
         title = _currentMusicPlayed.value!!.title,
         album = _currentMusicPlayed.value!!.album,
         artist = _currentMusicPlayed.value!!.artist,
@@ -152,18 +152,12 @@ class MusicControllerViewModel @Inject constructor(
         isMusicPlayed = _isMusicPlayed.value!!
     )
 
-    private val mediaPlayerManager = MediaPlayerManager.getInstance(application)
-
     fun hideMiniMusicPlayer() {
-        viewModelScope.launch {
-            _isMiniMusicPlayerHidden.postValue(true)
-        }
+        _isMiniMusicPlayerHidden.value = true
     }
 
     fun showMiniMusicPlayer() {
-        viewModelScope.launch {
-            _isMiniMusicPlayerHidden.postValue(false)
-        }
+        _isMiniMusicPlayerHidden.value = false
     }
 
     fun setMusicFavorite(favorite: Boolean) {
@@ -219,27 +213,24 @@ class MusicControllerViewModel @Inject constructor(
     }
 
     private fun setProgress(progress: Long) {
-        mediaPlayerManager.updateState(
-            mediaPlayerState.apply {
-                currentPosition = progress
-            }
-        )
+        mediaPlayerState.apply {
+            currentPosition = progress
+        }
 
         _currentProgress.value = progress
         _currentMusicDurationInMinute.value = TimeUnit.MILLISECONDS.toMinutes(progress).toInt()
         _currentMusicDurationInSecond.value = (progress / 1000 % 60).toInt()
 
         serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
-        serviceIntent.putExtra("sessionToken", mediaPlayerManager.token)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             application.startForegroundService(serviceIntent)
         } else application.startService(serviceIntent)
     }
 
-    fun applyProgress(progress: Long) {
-        exoPlayer.seekTo(progress)
-        setProgress(progress)
+    fun applyProgress(progressInMs: Long) {
+        exoPlayer.seekTo(progressInMs)
+        setProgress(progressInMs)
     }
 
     fun onVolumeChange() {
@@ -251,6 +242,9 @@ class MusicControllerViewModel @Inject constructor(
         Timber.i("onVolumeChange")
     }
 
+    /**
+     * get all music and shuffle
+     */
     fun getPlaylist() {
         repository.getAllMusic { musicList ->
             _playlist.value = musicList.toMutableList().apply {
@@ -274,6 +268,7 @@ class MusicControllerViewModel @Inject constructor(
     /**
      * @param audioID Music audioID
      * @param isPlayLastMusic if true, the music will be paused
+     * @param shufflePlaylist if true, call getPlaylist() function, if false, the playlist will not be created
      */
     fun play(audioID: Long, isPlayLastMusic: Boolean = false, shufflePlaylist: Boolean = true) {
         mediaHandler = Handler(Looper.getMainLooper())
@@ -319,21 +314,19 @@ class MusicControllerViewModel @Inject constructor(
 
                             mediaHandler.post(mediaRunnable)
 
-                            mediaPlayerManager.updateState(
-                                mediaPlayerState.apply {
-                                    title = _currentMusicPlayed.value!!.title
-                                    album = _currentMusicPlayed.value!!.album
-                                    artist = _currentMusicPlayed.value!!.artist
-                                    duration = _currentMusicPlayed.value!!.duration
-                                    currentPosition = _currentProgress.value!!
-                                    albumArtPath = _currentMusicPlayed.value!!.albumPath
-                                }
-                            )
+                            mediaPlayerState.apply {
+                                title = _currentMusicPlayed.value!!.title
+                                album = _currentMusicPlayed.value!!.album
+                                artist = _currentMusicPlayed.value!!.artist
+                                duration = _currentMusicPlayed.value!!.duration
+                                currentPosition = _currentProgress.value!!
+                                albumArtPath = _currentMusicPlayed.value!!.albumPath
+                            }
 
                             if (shufflePlaylist) getPlaylist()
 
                             if (isPlayLastMusic) pause()
-                            else play()
+                            else resume()
                         }
                     }
                 )
@@ -344,7 +337,8 @@ class MusicControllerViewModel @Inject constructor(
 
     fun playAll(musicList: List<Music>) {
         _playlist.value = musicList
-        play(_playlist.value!![0].audioID)
+        play(_playlist.value!![0].audioID, shufflePlaylist = false)
+        Timber.i("current playlist: ${_playlist.value}")
     }
 
     fun playLastMusic() {
@@ -362,7 +356,7 @@ class MusicControllerViewModel @Inject constructor(
         }
     }
 
-    fun play() {
+    fun resume() {
         when {
             !exoPlayer.isPlaying -> {
                 exoPlayer.play()
@@ -371,11 +365,9 @@ class MusicControllerViewModel @Inject constructor(
             else -> _isMusicPlayed.value = true
         }
 
-        mediaPlayerManager.updateState(
-            mediaPlayerState.apply {
-                isMusicPlayed = _isMusicPlayed.value!!
-            }
-        )
+        mediaPlayerState.apply {
+            isMusicPlayed = _isMusicPlayed.value!!
+        }
 
         serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
 
@@ -393,11 +385,9 @@ class MusicControllerViewModel @Inject constructor(
             else -> _isMusicPlayed.value = false
         }
 
-        mediaPlayerManager.updateState(
-            mediaPlayerState.apply {
-                isMusicPlayed = _isMusicPlayed.value!!
-            }
-        )
+        mediaPlayerState.apply {
+            isMusicPlayed = _isMusicPlayed.value!!
+        }
 
         serviceIntent.putExtra("mediaPLayerState", mediaPlayerState)
 
