@@ -43,6 +43,7 @@ import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.PlaylistItem
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils.toast
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -81,11 +82,17 @@ fun PlaylistPagerScreen(
     )
 
     if (newPlaylistModalBottomSheetState.isVisible) {
-        textFieldPlaylistNameFocusRequester.requestFocus()
         musicControllerViewModel.hideMiniMusicPlayer()
+        LaunchedEffect(Unit) {
+            delay(800)
+            textFieldPlaylistNameFocusRequester.requestFocus()
+        }
     } else {
         focusManager.clearFocus(force = true)
-        musicControllerViewModel.showMiniMusicPlayer()
+        LaunchedEffect(Unit) {
+            delay(800)
+            musicControllerViewModel.showMiniMusicPlayer()
+        }
     }
 
     homeViewModel.getAllPlaylist()

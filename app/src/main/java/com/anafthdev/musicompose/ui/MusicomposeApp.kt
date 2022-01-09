@@ -9,15 +9,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.BottomSheetScaffold
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -27,12 +30,10 @@ import androidx.core.net.toUri
 import androidx.navigation.compose.rememberNavController
 import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.album.AlbumViewModel
 import com.anafthdev.musicompose.ui.artist.ArtistViewModel
-import com.anafthdev.musicompose.ui.components.musicompose.MiniMusicPlayer
-import com.anafthdev.musicompose.ui.components.musicompose.MusicScreenMoreOptionSheetContent
-import com.anafthdev.musicompose.ui.components.musicompose.MusicScreenPlaylistSheetContent
-import com.anafthdev.musicompose.ui.components.musicompose.MusicScreenSheetContent
+import com.anafthdev.musicompose.ui.components.musicompose.*
 import com.anafthdev.musicompose.ui.home.HomeViewModel
 import com.anafthdev.musicompose.ui.playlist.PlaylistViewModel
 import com.anafthdev.musicompose.ui.scan_music.ScanMusicViewModel
@@ -68,21 +69,7 @@ fun MusicomposeApp(
     val systemUiController = rememberSystemUiController()
     val navigationController = rememberNavController()
     val musicControllerState by musicControllerViewModel.musicControllerState.observeAsState(
-        initial = MusicControllerViewModel.MusicControllerState(
-            playlistScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            musicScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            modalBottomSheetMusicInfoState = ModalBottomSheetState(
-                ModalBottomSheetValue.Hidden
-            ),
-        )
+        initial = MusicControllerState.initial
     )
 
     val currentMusicPlayed by musicControllerViewModel.currentMusicPlayed.observeAsState(initial = Music.unknown)
@@ -135,9 +122,9 @@ fun MusicomposeApp(
         sheetContent = {
 
             // BottomSheet MusicScreen sheet content
-            // BottomSheet Music info
+            // BottomSheet Music more option
             ModalBottomSheetLayout(
-                sheetState = musicControllerState.modalBottomSheetMusicInfoState,
+                sheetState = musicControllerState.musicMoreOptionModalBottomSheetState,
                 sheetElevation = 8.dp,
                 sheetShape = RoundedCornerShape(32.dp),
                 scrimColor = pure_black.copy(alpha = 0.6f),
@@ -145,62 +132,163 @@ fun MusicomposeApp(
                 sheetContent = {
 
                     // BottomSheet Music more option sheet content
-                    MusicScreenMoreOptionSheetContent(
-                        scope = scope,
-                        navController = navigationController,
-                        currentMusicPlayed = currentMusicPlayed,
-                        musicControllerState = musicControllerState
-                    )
-
-                    // BottomSheet Music info sheet content ~
-                },
-            ) {
-                // BottomSheet Playlist
-                BottomSheetScaffold(
-                    scaffoldState = musicControllerState.playlistScaffoldBottomSheetState,
-                    sheetBackgroundColor = ComposeUtils.darkenColor(dominantBackgroundColor, 0.6f),
-                    sheetShape = RoundedCornerShape(
-                        topStart = if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded) 0.dp else 32.dp,
-                        topEnd = if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded) 0.dp else 32.dp
-                    ),
-                    sheetPeekHeight = 64.dp,
-                    sheetContent = {
-
-                        // BottomSheet Playlist sheet content
-                        MusicScreenPlaylistSheetContent(
-                            dominantBackgroundColor = dominantBackgroundColor,
-                            isMusicPlayed = isMusicPlayed,
-                            currentMusicPlayed = currentMusicPlayed,
-                            musicPlayList = musicPlayList,
-                            musicControllerState = musicControllerState,
-                            musicControllerViewModel = musicControllerViewModel
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 12.dp, bottom = 24.dp)
+                                .size(32.dp, 2.dp)
+                                .clip(RoundedCornerShape(100))
+                                .background(
+                                    if (isSystemInDarkTheme()) white.copy(alpha = 0.2f) else black.copy(
+                                        alpha = 0.2f
+                                    )
+                                )
+                                .align(Alignment.CenterHorizontally)
                         )
 
-                        // BottomSheet Playlist sheet content
-                    },
+                        MusicScreenMoreOptionsSheetContent(
+                            scope = scope,
+                            navController = navigationController,
+                            currentMusicPlayed = currentMusicPlayed,
+                            musicControllerState = musicControllerState
+                        )
+                    }
+
+                    // BottomSheet Music more option sheet content ~
+                },
+            ) {
+
+                // BottomSheet Add To Playlist
+                ModalBottomSheetLayout(
+                    sheetState = musicControllerState.addToPlaylistModalBottomSheetState,
+                    sheetElevation = 8.dp,
+                    sheetShape = RoundedCornerShape(32.dp),
+                    scrimColor = pure_black.copy(alpha = 0.6f),
+                    sheetBackgroundColor = if (isSystemInDarkTheme()) background_content_dark else background_content_light,
+                    sheetContent = {
+
+                        // BottomSheet Add To Playlist sheet content
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 12.dp, bottom = 24.dp)
+                                    .size(32.dp, 2.dp)
+                                    .clip(RoundedCornerShape(100))
+                                    .background(
+                                        if (isSystemInDarkTheme()) white.copy(alpha = 0.2f) else black.copy(
+                                            alpha = 0.2f
+                                        )
+                                    )
+                                    .align(Alignment.CenterHorizontally)
+                            )
+
+                            MusicScreenAddToPlaylistSheetContent(
+                                scope = scope,
+                                currentMusicPlayed = currentMusicPlayed,
+                                musicControllerState = musicControllerState,
+                                musicControllerViewModel = musicControllerViewModel
+                            )
+                        }
+
+                        // BottomSheet Add To Playlist sheet content ~
+                    }
                 ) {
 
-                    // Music Screen
-                    MusicScreenSheetContent(
-                        scope = scope,
-                        dominantBackgroundColor = dominantBackgroundColor,
-                        maxStreamMusicVolume = maxStreamMusicVolume,
-                        isMusicPlayed = isMusicPlayed,
-                        isMusicFavorite = isMusicFavorite,
-                        isVolumeMuted = isVolumeMuted,
-                        currentVolume = currentVolume,
-                        currentProgress = currentProgress,
-                        currentMusicPlayed = currentMusicPlayed,
-                        currentMusicPlayMode = currentMusicPlayMode,
-                        currentMusicDurationInMinute = currentMusicDurationInMinute,
-                        currentMusicDurationInSecond = currentMusicDurationInSecond,
-                        musicDurationInMinute = musicDurationInMinute,
-                        musicDurationInSecond = musicDurationInSecond,
-                        musicControllerState = musicControllerState,
-                        musicControllerViewModel = musicControllerViewModel
-                    )
-                }  // BottomSheet Playlist ~
-            } // BottomSheet Music info ~
+                    // BottomSheet Set Timer
+                    ModalBottomSheetLayout(
+                        sheetState = musicControllerState.setTimerModalBottomSheetState,
+                        sheetElevation = 8.dp,
+                        sheetShape = RoundedCornerShape(32.dp),
+                        scrimColor = pure_black.copy(alpha = 0.6f),
+                        sheetBackgroundColor = if (isSystemInDarkTheme()) background_content_dark else background_content_light,
+                        sheetContent = {
+
+                            // BottomSheet Set Timer sheet content
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 12.dp, bottom = 24.dp)
+                                        .size(32.dp, 2.dp)
+                                        .clip(RoundedCornerShape(100))
+                                        .background(
+                                            if (isSystemInDarkTheme()) white.copy(alpha = 0.2f) else black.copy(
+                                                alpha = 0.2f
+                                            )
+                                        )
+                                        .align(Alignment.CenterHorizontally)
+                                )
+
+                                MusicScreenMoreOptionsSheetContent(
+                                    scope = scope,
+                                    navController = navigationController,
+                                    currentMusicPlayed = currentMusicPlayed,
+                                    musicControllerState = musicControllerState
+                                )
+                            }
+
+                            // BottomSheet Set Timer sheet content ~
+                        }
+                    ) {
+
+                        // BottomSheet Playlist
+                        BottomSheetScaffold(
+                            scaffoldState = musicControllerState.playlistScaffoldBottomSheetState,
+                            sheetBackgroundColor = ComposeUtils.darkenColor(dominantBackgroundColor, 0.6f),
+                            sheetShape = RoundedCornerShape(
+                                topStart = if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded) 0.dp else 32.dp,
+                                topEnd = if (musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded) 0.dp else 32.dp
+                            ),
+                            sheetPeekHeight = 64.dp,
+                            sheetContent = {
+
+                                // BottomSheet Playlist sheet content
+                                MusicScreenPlaylistSheetContent(
+                                    dominantBackgroundColor = dominantBackgroundColor,
+                                    isMusicPlayed = isMusicPlayed,
+                                    currentMusicPlayed = currentMusicPlayed,
+                                    musicPlayList = musicPlayList,
+                                    musicControllerState = musicControllerState,
+                                    musicControllerViewModel = musicControllerViewModel
+                                )
+
+                                // BottomSheet Playlist sheet content ~
+                            },
+                        ) {
+
+                            // Music Screen
+                            MusicScreenSheetContent(
+                                scope = scope,
+                                dominantBackgroundColor = dominantBackgroundColor,
+                                maxStreamMusicVolume = maxStreamMusicVolume,
+                                isMusicPlayed = isMusicPlayed,
+                                isMusicFavorite = isMusicFavorite,
+                                isVolumeMuted = isVolumeMuted,
+                                currentVolume = currentVolume,
+                                currentProgress = currentProgress,
+                                currentMusicPlayed = currentMusicPlayed,
+                                currentMusicPlayMode = currentMusicPlayMode,
+                                currentMusicDurationInMinute = currentMusicDurationInMinute,
+                                currentMusicDurationInSecond = currentMusicDurationInSecond,
+                                musicDurationInMinute = musicDurationInMinute,
+                                musicDurationInSecond = musicDurationInSecond,
+                                musicControllerState = musicControllerState,
+                                musicControllerViewModel = musicControllerViewModel
+                            )
+
+                        }  // BottomSheet Playlist ~
+                    }  // BottomSheet Set Timer ~
+                }  // BottomSheet Add To Playlist ~
+            }  // BottomSheet Music info ~
+
             // BottomSheet MusicScreen sheet content ~
         },
         modifier = Modifier

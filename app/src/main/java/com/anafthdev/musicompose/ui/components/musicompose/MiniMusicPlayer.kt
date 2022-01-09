@@ -26,6 +26,7 @@ import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.ComposeUtils
@@ -45,7 +46,7 @@ fun MiniMusicPlayer(
     currentProgress: Long,
     currentMusicPlayed: Music,
     musicControllerViewModel: MusicControllerViewModel,
-    musicControllerState: MusicControllerViewModel.MusicControllerState,
+    musicControllerState: MusicControllerState,
 ) {
     Column(
         modifier = Modifier

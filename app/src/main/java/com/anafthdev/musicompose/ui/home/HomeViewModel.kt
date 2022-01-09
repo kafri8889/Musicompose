@@ -11,7 +11,7 @@ import java.text.Collator
 import java.util.*
 
 class HomeViewModel(
-    private val application: MusicomposeApplication,
+    application: MusicomposeApplication,
     private val repository: MusicomposeRepositoryImpl
 ): ViewModel() {
 

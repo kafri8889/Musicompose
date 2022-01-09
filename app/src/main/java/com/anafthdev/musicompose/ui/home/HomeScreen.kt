@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.common.AppDatastore
 import com.anafthdev.musicompose.data.MusicomposeDestination
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.MainActivity
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.PopupMenu
@@ -82,21 +83,7 @@ fun HomeScreen(
 
     val sortMusicOption by datastore.getSortMusicOption.collectAsState(initial = AppUtils.PreferencesValue.SORT_MUSIC_BY_NAME)
     val musicControllerState by musicControllerViewModel.musicControllerState.observeAsState(
-        initial = MusicControllerViewModel.MusicControllerState(
-            playlistScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            musicScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            modalBottomSheetMusicInfoState = ModalBottomSheetState(
-                ModalBottomSheetValue.Hidden
-            ),
-        )
+        initial = MusicControllerState.initial
     )
 
     var hasNavigate by remember { mutableStateOf(false) }
@@ -137,8 +124,14 @@ fun HomeScreen(
             musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
                 musicControllerState.playlistScaffoldBottomSheetState.bottomSheetState.collapse()
             }
-            musicControllerState.modalBottomSheetMusicInfoState.isVisible -> scope.launch {
-                musicControllerState.modalBottomSheetMusicInfoState.hide()
+            musicControllerState.addToPlaylistModalBottomSheetState.isVisible -> scope.launch {
+                musicControllerState.addToPlaylistModalBottomSheetState.hide()
+            }
+            musicControllerState.setTimerModalBottomSheetState.isVisible -> scope.launch {
+                musicControllerState.setTimerModalBottomSheetState.hide()
+            }
+            musicControllerState.musicMoreOptionModalBottomSheetState.isVisible -> scope.launch {
+                musicControllerState.musicMoreOptionModalBottomSheetState.hide()
             }
             musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.isExpanded -> scope.launch {
                 musicControllerState.musicScaffoldBottomSheetState.bottomSheetState.collapse()
@@ -297,7 +290,7 @@ fun HomeScreen(
                     selectedTabIndex = pagerState.currentPage,
                     edgePadding = 8.dp,
                     divider = {},
-                    indicator = { tabPositions ->
+                    indicator = { _ ->
                         // TODO: 05/01/2022 pagerState.currentPage move to last index when screen is on (onStart),
                         //  (cause "Cannot round NaN value" if use indicator)
 //                        TabRowDefaults.Indicator(

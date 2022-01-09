@@ -55,25 +55,38 @@ class SearchViewModel(
                     for (music in musicList) {
                         when (type) {
                             TYPE_MUSIC -> {
-                                val containTitle = music.title.lowercase(Locale.getDefault()).contains(s, true)
-                                val containArtist = music.artist.lowercase(Locale.getDefault()).contains(s, true)
+                                val containTitle = music.title
+                                    .lowercase(Locale.getDefault())
+                                    .contains(s, true)
+
+                                val containArtist = music.artist
+                                    .lowercase(Locale.getDefault())
+                                    .contains(s, true)
 
                                 if (containTitle or containArtist) {
                                     filteredList.add(music)
                                 }
                             }
                             TYPE_ARTIST -> {
-                                if (music.artist.lowercase(Locale.getDefault()).contains(s, true)) {
+                                if (music.artist
+                                        .lowercase(Locale.getDefault())
+                                        .contains(s, true)) {
                                     filteredList.add(music)
                                 }
                             }
                             TYPE_ALBUM -> {
-                                if (music.album.lowercase(Locale.getDefault()).contains(s, true)) {
+                                if (music.album
+                                        .lowercase(Locale.getDefault())
+                                        .contains(s, true)) {
                                     filteredList.add(music)
                                 }
                             }
                             else -> {
-                                if (music.title.lowercase(Locale.getDefault()).contains(s, true)) {
+                                if (
+                                    music.title
+                                        .lowercase(Locale.getDefault())
+                                        .contains(s, true)
+                                ) {
                                     filteredList.add(music)
                                 }
                             }

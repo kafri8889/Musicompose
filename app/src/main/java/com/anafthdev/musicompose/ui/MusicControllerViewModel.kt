@@ -21,6 +21,7 @@ import com.anafthdev.musicompose.common.MediaPlayerService
 import com.anafthdev.musicompose.data.MusicomposeRepositoryImpl
 import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.utils.AppUtils.containBy
 import com.google.android.exoplayer2.ExoPlayer
@@ -85,21 +86,7 @@ class MusicControllerViewModel @Inject constructor(
 
     @OptIn(ExperimentalMaterialApi::class)
     val musicControllerState: LiveData<MusicControllerState> = MutableLiveData(
-        MusicControllerState(
-            playlistScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            musicScaffoldBottomSheetState = BottomSheetScaffoldState(
-                drawerState = DrawerState(DrawerValue.Closed),
-                bottomSheetState = BottomSheetState(BottomSheetValue.Collapsed),
-                snackbarHostState = SnackbarHostState()
-            ),
-            modalBottomSheetMusicInfoState = ModalBottomSheetState(
-                ModalBottomSheetValue.Hidden
-            ),
-        )
+        MusicControllerState.initial
     )
 
     var onNext: (Int) -> Unit = {}
@@ -153,11 +140,15 @@ class MusicControllerViewModel @Inject constructor(
     )
 
     fun hideMiniMusicPlayer() {
-        _isMiniMusicPlayerHidden.value = true
+        viewModelScope.launch {
+            _isMiniMusicPlayerHidden.postValue(true)
+        }
     }
 
     fun showMiniMusicPlayer() {
-        _isMiniMusicPlayerHidden.value = false
+        viewModelScope.launch {
+            _isMiniMusicPlayerHidden.postValue(false)
+        }
     }
 
     fun setMusicFavorite(favorite: Boolean) {
@@ -434,6 +425,10 @@ class MusicControllerViewModel @Inject constructor(
         return currentMusicIndex
     }
 
+    fun getAllPlaylist(action: (List<Playlist>) -> Unit) {
+        repository.getAllPlaylist(action)
+    }
+
     fun newPlaylist(playlist: Playlist, action: () -> Unit = {}) {
         repository.insertPlaylist(playlist, action)
     }
@@ -456,12 +451,6 @@ class MusicControllerViewModel @Inject constructor(
             action = action
         )
     }
-
-    data class MusicControllerState @OptIn(ExperimentalMaterialApi::class) constructor(
-        val playlistScaffoldBottomSheetState: BottomSheetScaffoldState,
-        val musicScaffoldBottomSheetState: BottomSheetScaffoldState,
-        val modalBottomSheetMusicInfoState: ModalBottomSheetState,
-    )
 
     enum class MusicPlayMode {
         REPEAT_OFF,

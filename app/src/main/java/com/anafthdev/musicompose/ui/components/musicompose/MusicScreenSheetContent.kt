@@ -31,6 +31,7 @@ import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.components.IconButton
 import com.anafthdev.musicompose.ui.components.Slider
@@ -64,7 +65,7 @@ fun MusicScreenSheetContent(
     currentMusicDurationInSecond: Int,
     musicDurationInMinute: Int,
     musicDurationInSecond: Int,
-    musicControllerState: MusicControllerViewModel.MusicControllerState,
+    musicControllerState: MusicControllerState,
     musicControllerViewModel: MusicControllerViewModel
 ) {
 
@@ -177,7 +178,7 @@ fun MusicScreenSheetContent(
                     ) {
                         Image(
                             painter = painterResource(
-                                id = if (isMusicFavorite) R.drawable.ic_favorite_selected else R.drawable.ic_favorite
+                                id = if (isMusicFavorite) R.drawable.ic_favorite_selected else R.drawable.ic_favorite_unselected
                             ),
                             contentDescription = null,
                             modifier = Modifier
@@ -196,7 +197,7 @@ fun MusicScreenSheetContent(
                             )
                             .clickable {
                                 scope.launch {
-                                    musicControllerState.modalBottomSheetMusicInfoState.show()
+                                    musicControllerState.musicMoreOptionModalBottomSheetState.show()
                                 }
                             }
                     ) {

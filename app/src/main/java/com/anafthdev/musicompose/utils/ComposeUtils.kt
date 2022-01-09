@@ -23,8 +23,7 @@ import java.io.FileNotFoundException
 
 object ComposeUtils {
 
-    @SuppressWarnings("ComposableNaming")
-    @Composable
+    @Suppress("deprecation")
     fun getDominantColor(context: Context, uri: Uri, onGenerated: (Palette) -> Unit) {
         Palette.Builder(
             run {

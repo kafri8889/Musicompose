@@ -29,6 +29,7 @@ import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
 import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.home.PlaylistList
 import com.anafthdev.musicompose.ui.theme.background_light
@@ -49,7 +50,7 @@ fun MusicScreenPlaylistSheetContent(
     isMusicPlayed: Boolean,
     currentMusicPlayed: Music,
     musicPlayList: List<Music>,
-    musicControllerState: MusicControllerViewModel.MusicControllerState,
+    musicControllerState: MusicControllerState,
     musicControllerViewModel: MusicControllerViewModel
 ) {
     Column(

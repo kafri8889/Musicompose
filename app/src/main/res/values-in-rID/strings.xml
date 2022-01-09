@@ -30,5 +30,7 @@
     <string name="no_song">Tidak ada lagu</string>
     <string name="no_album">Tidak ada album</string>
     <string name="no_artist">Tidak ada artis</string>
+    <string name="added">Sudah ditambahkan</string>
+    <string name="successfully_added">Berhasil ditambahkan</string>
 
 </resources>
