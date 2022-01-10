@@ -32,6 +32,9 @@ import com.anafthdev.musicompose.model.Playlist
 import com.anafthdev.musicompose.ui.MusicControllerViewModel
 import com.anafthdev.musicompose.ui.theme.*
 import com.anafthdev.musicompose.utils.AppUtils.containBy
+import com.anafthdev.musicompose.utils.AppUtils.indexOf
+import com.anafthdev.musicompose.utils.AppUtils.move
+import com.anafthdev.musicompose.utils.AppUtils.removeBy
 import com.anafthdev.musicompose.utils.AppUtils.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -56,55 +59,59 @@ fun MusicScreenAddToPlaylistSheetContent(
     musicControllerViewModel.getAllPlaylist { mPlaylistList ->
         playlistList.clear()
         playlistList.addAll(
-            mPlaylistList.filter { it.id != Playlist.justPlayed.id }
+            mPlaylistList
+                .move(
+                    fromIndex = mPlaylistList.indexOf { it.id == Playlist.favorite.id },
+                    toIndex = 0
+                )
+                .removeBy { it.id == Playlist.justPlayed.id }
         )
     }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
     ) {
 
-        LazyColumn {
-
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                musicControllerState.addToPlaylistModalBottomSheetState.hide()
-                                delay(200)
-                                musicControllerState.musicMoreOptionModalBottomSheetState.show()
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
-                            tint = if (isSystemInDarkTheme()) white else black,
-                            contentDescription = null
-                        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        ) {
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        musicControllerState.addToPlaylistModalBottomSheetState.hide()
+                        delay(200)
+                        musicControllerState.musicMoreOptionModalBottomSheetState.show()
                     }
-
-                    Text(
-                        text = stringResource(id = R.string.add_to_playlist),
-                        style = typographyDmSans().body1.copy(
-                            fontSize = TextUnit(16f, TextUnitType.Sp),
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                    )
                 }
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.ArrowBack,
+                    tint = if (isSystemInDarkTheme()) white else black,
+                    contentDescription = null
+                )
             }
+
+            Text(
+                text = stringResource(id = R.string.add_to_playlist),
+                style = typographyDmSans().body1.copy(
+                    fontSize = TextUnit(16f, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier
+                    .padding(start = 8.dp)
+            )
+        }
+
+        LazyColumn {
 
             items(playlistList) { playlist ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
