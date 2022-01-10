@@ -32,5 +32,7 @@
     <string name="no_artist">Tidak ada artis</string>
     <string name="added">Sudah ditambahkan</string>
     <string name="successfully_added">Berhasil ditambahkan</string>
+    <string name="non_active">Nonaktif</string>
+    <string name="set_time_to">Atur waktu ke</string>
 
 </resources>

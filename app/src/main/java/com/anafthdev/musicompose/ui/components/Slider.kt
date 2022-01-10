@@ -1,5 +1,6 @@
 package com.anafthdev.musicompose.ui.components
 
+import android.R.attr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.*
@@ -19,10 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PointMode
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -35,6 +32,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.lerp
+import com.anafthdev.musicompose.ui.theme.background_content_dark
+import com.anafthdev.musicompose.ui.theme.background_content_light
 import com.anafthdev.musicompose.utils.minimumTouchTargetSize
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +42,14 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
+import android.R.attr.y
 
+import android.R.attr.x
+import android.graphics.Paint
+import android.text.TextPaint
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun Slider(
@@ -572,6 +578,73 @@ private class DefaultSliderColors(
 }
 
 object SliderDefaults {
+
+    object Tick {
+
+        /**
+         * Modified from: https://gist.github.com/PiotrPrus/2434e1fbe37ad807a6f0a0f75d0f29f2#file-canvaswithverticallines-kt
+         */
+        @Composable
+        fun VerticalLines(
+            items: List<String>,
+            tickColor: Color,
+            modifier: Modifier = Modifier,
+            style: TextStyle = MaterialTheme.typography.body1
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+            ) {
+                val drawPadding = with(LocalDensity.current) { 8.dp.toPx() }
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    val yStart = 0f
+                    val yEnd = size.height
+                    val distance = (size.width.minus(2 * drawPadding)).div(items.size.minus(1))
+                    items.forEachIndexed { i, s ->
+                        drawLine(
+                            color = tickColor,
+                            start = Offset(
+                                x = drawPadding + i.times(distance),
+                                y = yStart
+                            ),
+                            end = Offset(
+                                x = drawPadding + i.times(distance),
+                                y = yEnd
+                            )
+                        )
+
+                        drawContext.canvas.nativeCanvas.drawText(
+                            s,
+                            drawPadding + i.times(distance),
+                            size.height + drawPadding + 12.dp.toPx(),
+                            TextPaint().apply {
+                                color = style.color.toArgb()
+                                textSize = style.fontSize.toPx()
+                                textAlign = when (i) {
+                                    0 -> Paint.Align.LEFT
+                                    (items.size - 1) -> Paint.Align.RIGHT
+                                    else -> {
+                                        when (style.textAlign) {
+                                            TextAlign.Start -> Paint.Align.LEFT
+                                            TextAlign.Center -> Paint.Align.CENTER
+                                            TextAlign.End -> Paint.Align.RIGHT
+                                            else -> Paint.Align.LEFT
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
     fun colors(

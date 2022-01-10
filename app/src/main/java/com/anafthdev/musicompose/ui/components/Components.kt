@@ -23,7 +23,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -528,4 +530,67 @@ fun PlayAllSongButton(
             )
         }
     }
+}
+
+
+
+
+
+@OptIn(ExperimentalUnitApi::class)
+@Composable
+fun SetTimerSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    
+    val tickItems = listOf(
+        "Nonaktif",
+        "30 mnt",
+        "60 mnt",
+        "90 mnt"
+    )
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(64.dp)
+    ) {
+
+        SliderDefaults.Tick.VerticalLines(
+            items = tickItems,
+            tickColor = if (isSystemInDarkTheme()) background_content_light else background_content_dark,
+            style = typographySkModernist().body1.copy(
+                fontSize = TextUnit(12f, TextUnitType.Sp),
+                textAlign = TextAlign.Center
+            )
+        )
+
+        Slider(
+            thumbRadius = 6.dp,
+            value = value,
+            valueRange = 0f..90f,
+            steps = 90,
+            onValueChange = { newValue ->
+                onValueChange(newValue)
+            },
+            colors = SliderDefaults.colors(
+                activeTrackColor = sunset_orange,
+                activeTickColor = Color.Transparent,
+                inactiveTrackColor = if (isSystemInDarkTheme()) background_content_light else background_content_dark,
+                inactiveTickColor = Color.Transparent,
+                thumbColor = sunset_orange
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SetTimerSliderPreview() {
+    SetTimerSlider(
+        value = 45f,
+        onValueChange = {}
+    )
 }

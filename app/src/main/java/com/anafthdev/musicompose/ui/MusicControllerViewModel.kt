@@ -250,7 +250,9 @@ class MusicControllerViewModel @Inject constructor(
 
         // Drag and drop list
         _playlist.value?.let { mPlaylist ->
-            _playlist.value = ArrayList(mPlaylist).apply { move(oldPos.index, newPos.index) }
+            _playlist.value = ArrayList(mPlaylist).apply {
+                move(oldPos.index, newPos.index)
+            }
         }
     }
 

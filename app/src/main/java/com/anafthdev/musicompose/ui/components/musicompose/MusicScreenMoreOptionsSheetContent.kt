@@ -102,7 +102,11 @@ fun MusicScreenMoreOptionsSheetContent(
                                     }
                                 }
                                 moreOptionItems[3].first -> {
-
+                                    scope.launch {
+                                        musicControllerState.musicMoreOptionModalBottomSheetState.hide()
+                                        delay(200)
+                                        musicControllerState.setTimerModalBottomSheetState.show()
+                                    }
                                 }
                             }
                         }

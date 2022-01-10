@@ -27,6 +27,31 @@ object AppUtils {
     }
 
     /**
+     * Move element.
+     * @author kafri8889
+     */
+    fun <T> Collection<T>.move(fromIndex: Int, toIndex: Int): List<T> {
+        if (fromIndex == toIndex) return this.toList()
+        return ArrayList(this).apply {
+            val temp = get(fromIndex)
+            removeAt(fromIndex)
+            add(toIndex, temp)
+        }
+    }
+
+    /**
+     * Get index element of given predicate.
+     * @author kafri8889
+     */
+    fun <T> Collection<T>.indexOf(predicate: (T) -> Boolean): Int {
+        this.forEachIndexed { i, t ->
+            if (predicate(t)) return i
+        }
+
+        return -1
+    }
+
+    /**
      * Remove element by given [predicate].
      * @author kafri8889
      */

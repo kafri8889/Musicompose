@@ -227,10 +227,8 @@ fun MusicomposeApp(
                                         .align(Alignment.CenterHorizontally)
                                 )
 
-                                MusicScreenMoreOptionsSheetContent(
+                                MusicScreenSetTimerSheetContent(
                                     scope = scope,
-                                    navController = navigationController,
-                                    currentMusicPlayed = currentMusicPlayed,
                                     musicControllerState = musicControllerState
                                 )
                             }

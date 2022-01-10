@@ -33,5 +33,7 @@
     <string name="no_artist">No Artist</string>
     <string name="added">Added</string>
     <string name="successfully_added">Successfully added</string>
+    <string name="non_active">Non-active</string>
+    <string name="set_time_to">Set time to</string>
 
 </resources>
