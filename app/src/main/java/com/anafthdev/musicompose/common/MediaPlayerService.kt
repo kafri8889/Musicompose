@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.view.KeyEvent
 import com.anafthdev.musicompose.model.MediaPlayerState
 import com.anafthdev.musicompose.model.Music
+import com.anafthdev.musicompose.utils.AlarmUtil
 import com.anafthdev.musicompose.utils.NotificationUtil
 import timber.log.Timber
 
@@ -129,6 +130,7 @@ class MediaPlayerService: Service() {
         mediaPLayerAction?.stop()
         mediaSession.release()
         notificationManager.cancelAll()
+        AlarmUtil.cancelTimer(this)
         stopForeground(true).also {
             isForegroundService = false
         }

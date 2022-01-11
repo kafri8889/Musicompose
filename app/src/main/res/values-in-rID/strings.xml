@@ -34,5 +34,7 @@
     <string name="successfully_added">Berhasil ditambahkan</string>
     <string name="non_active">Nonaktif</string>
     <string name="set_time_to">Atur waktu ke</string>
+    <string name="timer_disabled">Pengatur waktu dinonaktifkan</string>
+    <string name="timer_is_set_to">Pengatur waktu diatur ke</string>
 
 </resources>

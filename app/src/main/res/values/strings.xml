@@ -35,5 +35,7 @@
     <string name="successfully_added">Successfully added</string>
     <string name="non_active">Non-active</string>
     <string name="set_time_to">Set time to</string>
+    <string name="timer_disabled">Timer disabled</string>
+    <string name="timer_is_set_to">Timer is set to</string>
 
 </resources>

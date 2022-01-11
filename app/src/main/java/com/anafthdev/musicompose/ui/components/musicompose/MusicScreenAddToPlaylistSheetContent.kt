@@ -59,12 +59,14 @@ fun MusicScreenAddToPlaylistSheetContent(
     musicControllerViewModel.getAllPlaylist { mPlaylistList ->
         playlistList.clear()
         playlistList.addAll(
-            mPlaylistList
-                .move(
-                    fromIndex = mPlaylistList.indexOf { it.id == Playlist.favorite.id },
-                    toIndex = 0
-                )
-                .removeBy { it.id == Playlist.justPlayed.id }
+            if (mPlaylistList.isNotEmpty()) {
+                mPlaylistList
+                    .move(
+                        fromIndex = mPlaylistList.indexOf { it.id == Playlist.favorite.id },
+                        toIndex = 0
+                    )
+                    .removeBy { it.id == Playlist.justPlayed.id }
+            } else emptyList()
         )
     }
 

@@ -5,9 +5,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.os.IBinder
+import android.os.*
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -68,6 +66,13 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 		if (!granted) {
 			"You must grant permission!".toast(this, Toast.LENGTH_LONG)
 			finishAffinity()
+		} else {
+			Handler(Looper.getMainLooper()).postDelayed({
+				// relaunch app
+				startActivity(Intent(this, MainActivity::class.java))
+			}, 800)
+
+			finishAffinity()
 		}
 	}
 
@@ -82,70 +87,58 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)  {
 			permissionResultLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-		}
-
-		val serviceIntent = Intent(this, MediaPlayerService::class.java)
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			ContextCompat.startForegroundService(this, serviceIntent)
-			startForegroundService(serviceIntent)
-		} else startService(serviceIntent)
-		bindService(
-			serviceIntent,
-			this,
-			BIND_AUTO_CREATE
-		)
-
-		// register SettingsContentObserver, used to observe changes in volume
-		contentResolver.registerContentObserver(
-			android.provider.Settings.System.CONTENT_URI,
-			true,
-			settingsContentObserver
-		)
-
-		val defaultPlaylist = listOf(
-			Playlist(
-				name = getString(R.string.favorite),
-				musicList = emptyList(),
-				defaultImage = R.drawable.ic_favorite_image,
-				isDefault = true,
-				id = 0
-			),
-			Playlist(
-				name = getString(R.string.just_played),
-				musicList = emptyList(),
-				defaultImage = R.drawable.ic_just_played_image,
-				isDefault = true,
-				id = 1
+		} else {
+			val serviceIntent = Intent(this, MediaPlayerService::class.java)
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				ContextCompat.startForegroundService(this, serviceIntent)
+				startForegroundService(serviceIntent)
+			} else startService(serviceIntent)
+			bindService(
+				serviceIntent,
+				this,
+				BIND_AUTO_CREATE
 			)
-		)
 
-		// check if default playlist exists or not, if not add playlist
-		databaseUtil.getAllPlaylist { playlistList ->
-			defaultPlaylist.forEach { playlist ->
-				if (!playlistList.containBy { it.id == playlist.id }) {
-					databaseUtil.insertPlaylist(playlist) {
-						Timber.i("playlist \"${playlist.name}\" created")
+			// register SettingsContentObserver, used to observe changes in volume
+			contentResolver.registerContentObserver(
+				android.provider.Settings.System.CONTENT_URI,
+				true,
+				settingsContentObserver
+			)
+
+			val defaultPlaylist = listOf(
+				Playlist.favorite,
+				Playlist.justPlayed
+			)
+
+			// check if default playlist exists or not, if not add playlist
+			databaseUtil.getAllPlaylist { playlistList ->
+				defaultPlaylist.forEach { playlist ->
+					if (!playlistList.containBy { it.id == playlist.id }) {
+						databaseUtil.insertPlaylist(playlist) {
+							Timber.i("playlist \"${playlist.name}\" created")
+						}
 					}
 				}
 			}
-		}
 
-		setContent {
-			ProvideWindowInsets(
-				windowInsetsAnimationsEnabled = true
-			) {
-				MusicomposeTheme {
-					Surface(color = MaterialTheme.colors.background) {
-						MusicomposeApp(
-							datastore = datastore,
-							homeViewModel = homeViewModel,
-							searchViewModel = searchViewModel,
-							scanMusicViewModel = scanMusicViewModel,
-							playlistViewModel = playlistViewModel,
-							albumViewModel = albumViewModel,
-							artistViewModel = artistViewModel,
-							musicControllerViewModel = musicControllerViewModel
-						)
+			setContent {
+				ProvideWindowInsets(
+					windowInsetsAnimationsEnabled = true
+				) {
+					MusicomposeTheme {
+						Surface(color = MaterialTheme.colors.background) {
+							MusicomposeApp(
+								datastore = datastore,
+								homeViewModel = homeViewModel,
+								searchViewModel = searchViewModel,
+								scanMusicViewModel = scanMusicViewModel,
+								playlistViewModel = playlistViewModel,
+								albumViewModel = albumViewModel,
+								artistViewModel = artistViewModel,
+								musicControllerViewModel = musicControllerViewModel
+							)
+						}
 					}
 				}
 			}
@@ -171,7 +164,11 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 	override fun onDestroy() {
 		super.onDestroy()
 
-		unbindService(this)
+		try {
+			unbindService(this)
+		} catch (e: IllegalArgumentException) {
+			Timber.e(e, "Service not registered")
+		}
 	}
 
 	override fun onServiceConnected(name: ComponentName?, service: IBinder) {

@@ -32,6 +32,7 @@ data class Playlist(
         val justPlayed = Playlist(
             name = "Just played",
             musicList = emptyList(),
+            defaultImage = R.drawable.ic_just_played_image,
             isDefault = true,
             id = 1
         )

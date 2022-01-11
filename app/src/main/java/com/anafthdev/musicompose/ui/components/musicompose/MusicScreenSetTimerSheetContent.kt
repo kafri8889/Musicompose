@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,9 +30,12 @@ import com.anafthdev.musicompose.R
 import com.anafthdev.musicompose.model.MusicControllerState
 import com.anafthdev.musicompose.ui.components.SetTimerSlider
 import com.anafthdev.musicompose.ui.theme.*
+import com.anafthdev.musicompose.utils.AlarmUtil
+import com.anafthdev.musicompose.utils.AppUtils.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 @OptIn(
@@ -44,10 +48,18 @@ fun MusicScreenSetTimerSheetContent(
     musicControllerState: MusicControllerState
 ) {
 
+    val context = LocalContext.current
+
     var timeInMinute by remember { mutableStateOf(0f) }
+    var minute by remember { mutableStateOf(0L) }
+
+    minute = timeInMinute.toString().substring(
+        0,
+        if (timeInMinute < 10) 1 else 2
+    ).toLong()
 
     val setTimeToMinuteText = buildAnnotatedString {
-        if (timeInMinute.toInt() == 0) {
+        if (minute == 0L) {
             append("${stringResource(id = R.string.set_time_to)}: ")
 
             withStyle(
@@ -67,12 +79,7 @@ fun MusicScreenSetTimerSheetContent(
                     fontSize = TextUnit(16f, TextUnitType.Sp)
                 ).toSpanStyle()
             ) {
-                append(
-                    timeInMinute.toString().substring(
-                        0,
-                        if (timeInMinute.toInt() < 10) 1 else 2
-                    )
-                )
+                append(minute.toString())
             }
 
             append(" mnt")
@@ -119,7 +126,21 @@ fun MusicScreenSetTimerSheetContent(
 
             IconButton(
                 onClick = {
+                    if (minute == 0L) {
+                        AlarmUtil.cancelTimer(context)
+                        context.getString(R.string.timer_disabled).toast(context)
+                    } else {
+                        AlarmUtil.setTimer(
+                            context = context,
+                            durationInMs = minute * 60 * 1000
+                        )
 
+                        "${context.getString(R.string.timer_is_set_to)} $minute mnt".toast(context)
+                    }
+
+                    scope.launch {
+                        musicControllerState.setTimerModalBottomSheetState.hide()
+                    }
                 }
             ) {
                 Icon(
