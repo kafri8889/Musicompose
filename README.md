@@ -22,4 +22,4 @@ Music app made with Jetpack Compose
 
 MusicomposeApp.kt BottomSheet Structure
 
-<img src="https://github.com/kafri8889/Musicompose/blob/master/img/musicompose_musicomposeapp_bottom_sheet_structure.png" height="600" width="270" >
+<img src="https://github.com/kafri8889/Musicompose/blob/master/img/musicompose_musicomposeapp_bottom_sheet_structure.png" height="600" width="636" >
