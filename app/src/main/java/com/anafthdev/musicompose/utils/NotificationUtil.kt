@@ -43,14 +43,12 @@ object NotificationUtil {
         )
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(context, channelID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle("Musicompose")
                 .setContentText("Musicompose running in the foreground")
                 .setContentIntent(pi)
                 .build()
         } else {
             Notification.Builder(context)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle("Musicompose")
                 .setContentText("Musicompose running in the foreground")
                 .setContentIntent(pi)
@@ -132,7 +130,7 @@ object NotificationUtil {
 
         return builder
             .setStyle(mediaStyle)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_play_filled_rounded)
             .setOnlyAlertOnce(true)
             .addAction(previousAction)
             .addAction(playPauseAction)

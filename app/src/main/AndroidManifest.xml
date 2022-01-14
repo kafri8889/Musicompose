@@ -16,6 +16,10 @@
         android:theme="@style/Theme.Musicompose"
         android:requestLegacyExternalStorage="true">
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_musicompose" />
+
         <receiver android:name=".common.MediaPlayerReceiver"/>
 
         <service
