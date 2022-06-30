@@ -1,5 +1,7 @@
 # Musicompose
 
+V2: https://github.com/kafri8889/Musicompose-V2
+
 Music app made with Jetpack Compose
 
 **Preview**
